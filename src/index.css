@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* This line is critical for Tailwind v4 to support the 'class' strategy */
+@variant dark (&:where(.dark, .dark *));
