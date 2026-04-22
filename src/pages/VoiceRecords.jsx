@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
-import { Mic, Square, Play, Trash2, Calendar, Volume2 } from 'lucide-react';
+import { Mic, Square, Play, Trash2, Calendar, Volume2, Sparkles, ReceiptText, Upload, ShieldCheck, CheckCircle2, History, PlayCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 export default function VoiceRecords() {
   const { t } = useTranslation();

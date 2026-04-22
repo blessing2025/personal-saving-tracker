@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useForm } from 'react-hook-form';
 import { useNumberFormatter } from 'react-aria';
 import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
 import toast from 'react-hot-toast';
-import { Target, Plus, Trash2 } from 'lucide-react';
+import { Target, Plus, Trash2, ArrowRight, Laptop, Car, Palmtree, PlusCircle, MoreVertical } from 'lucide-react';
 
 export default function GoalPage() {
   const { t, profile } = useTranslation();
   const { user } = useAuth();
   const { register, handleSubmit, reset } = useForm();
-  const [goals, setGoals] = useState([]);
   const [contributionInputs, setContributionInputs] = useState({});
 
   const formatter = useNumberFormatter({
@@ -20,21 +20,15 @@ export default function GoalPage() {
     currencyDisplay: 'symbol'
   });
 
-  const getCurrencySymbol = (code) => {
-    const symbols = { USD: '$', EUR: '€', NGN: '₦', GBP: '£', FCAF: 'CFA' };
-    return symbols[code] || '$';
-  };
+  // Reactive data fetching
+  const goals = useLiveQuery(() => 
+    db.goals.where('user_id').equals(user?.id || '').toArray()
+  , [user]) || [];
 
-  const fetchData = useCallback(async () => {
-    if (!user) return;
-
-    const data = await db.goals.where('user_id').equals(user.id).toArray();
-    setGoals(data);
-  }, [user]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  // Calculate overall momentum
+  const totalTarget = goals.reduce((sum, g) => sum + g.target_amount, 0);
+  const totalSaved = goals.reduce((sum, g) => sum + g.saved_amount, 0);
+  const overallProgress = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
 
   const onSubmit = async (data) => {
     try {
@@ -45,12 +39,11 @@ export default function GoalPage() {
         target_amount: parseFloat(data.target_amount),
         saved_amount: 0,
         deadline: data.deadline,
-        color: 'bg-blue-600',
+        color: 'bg-indigo-600',
         synced_at: null
       });
       toast.success(t('goalCreated'));
       reset();
-      fetchData();
     } catch (err) {
       toast.error('Failed to create goal');
     }
@@ -72,86 +65,164 @@ export default function GoalPage() {
       toast.success(t('contributionAdded'));
       // Clear the input for this specific goal
       setContributionInputs(prev => ({ ...prev, [id]: '' }));
-      fetchData();
     } catch (err) {
       toast.error('Failed to update goal');
     }
   };
 
   const handleDelete = async (id) => {
-    await db.goals.delete(id);
-    fetchData();
+    if (window.confirm(t('deleteConfirm'))) {
+      await db.goals.delete(id);
+    }
+  };
+
+  const getIcon = (name) => {
+    const n = name.toLowerCase();
+    if (n.includes('laptop') || n.includes('mac')) return <Laptop size={20} />;
+    if (n.includes('car') || n.includes('suv')) return <Car size={20} />;
+    if (n.includes('vacation') || n.includes('trip') || n.includes('coast')) return <Palmtree size={20} />;
+    return <Target size={20} />;
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{t('savingGoals')}</h2>
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-screen-2xl mx-auto space-y-10">
+      {/* Page Header */}
+      <header>
+        <h1 className="text-5xl font-extrabold tracking-tight text-indigo-900 dark:text-white mb-3 font-headline">
+          {t('savingGoals')}
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400 text-lg font-light max-w-2xl">
+          Plan for the future and track your progress with editorial precision. Every contribution brings your vision closer to reality.
+        </p>
+      </header>
 
-      {/* Add Goal Form */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <h3 className="font-semibold mb-4 text-slate-700 dark:text-slate-300">{t('setNewGoal')}</h3>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <input {...register('name', { required: true })} className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 rounded-lg dark:text-white" placeholder={t('goalName')} />
-          <input {...register('target_amount', { required: true })} className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 rounded-lg dark:text-white" placeholder={t('target')} type="number" />
-          <input {...register('deadline')} className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 rounded-lg text-slate-500" type="date" />
-          <button type="submit" className="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
-            <Plus size={18} /> {t('add')}
-          </button>
-        </form>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {goals.map((goal) => {
-          const percentage = (goal.saved_amount / goal.target_amount) * 100;
-          return (
-            <div key={goal.name} className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-400">
-                  <Target size={20} />
-                </div>
-                <button onClick={() => handleDelete(goal.id)} className="text-slate-300 hover:text-rose-500 transition-colors">
-                  <Trash2 size={18} />
-                </button>
-              </div>
-              
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white">{goal.name}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 font-medium">{t('deadline')}: {goal.deadline}</p>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{formatter.format(goal.saved_amount)} {t('saved')}</span>
-                  <span className="text-slate-500">{percentage.toFixed(0)}%</span>
-                </div>
-                <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                  <div 
-                    className={`${goal.color} h-full transition-all duration-500`} 
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex gap-2">
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder={t('amount')}
-                  value={contributionInputs[goal.id] || ''}
-                  onChange={(e) => setContributionInputs({ 
-                    ...contributionInputs, 
-                    [goal.id]: e.target.value 
-                  })}
-                  className="flex-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-white rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Create Goal Sidebar */}
+        <section className="lg:col-span-4 bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-xl shadow-indigo-900/5">
+          <h2 className="text-xl font-bold text-indigo-900 dark:text-white mb-6 flex items-center gap-2 font-headline">
+            <PlusCircle className="text-indigo-600 dark:text-indigo-400" size={20} />
+            {t('setNewGoal')}
+          </h2>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 ml-1">{t('goalName')}</label>
+              <input 
+                {...register('name', { required: true })}
+                className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl py-4 px-5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body" 
+                placeholder="e.g., Summer Yacht" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 ml-1">{t('target')}</label>
+              <div className="relative">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+                <input 
+                  {...register('target_amount', { required: true })}
+                  className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl py-4 pl-10 pr-5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body" 
+                  placeholder="0.00" 
+                  type="number" 
                 />
-                <button 
-                  onClick={() => handleContribution(goal.id, goal.saved_amount)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-                >
-                  {t('add')}
-                </button>
               </div>
             </div>
-          );
-        })}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 ml-1">{t('deadline')}</label>
+              <input 
+                {...register('deadline')}
+                className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl py-4 px-5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body" 
+                type="date" 
+              />
+            </div>
+            <button className="w-full bg-indigo-600 text-white rounded-full py-4 font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-indigo-200 dark:shadow-none" type="submit">
+              <span>{t('add')}</span>
+              <ArrowRight size={18} />
+            </button>
+          </form>
+          <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700 text-center">
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 inline-block border border-emerald-100 dark:border-emerald-800">
+              <p className="text-emerald-700 dark:text-emerald-400 text-sm font-semibold">Tip: Automatic transfers increase success rates by 40%</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Goals Grid */}
+        <section className="lg:col-span-8 space-y-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {goals.map((goal) => {
+              const percentage = Math.min((goal.saved_amount / goal.target_amount) * 100, 100);
+              return (
+                <div key={goal.id} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4">
+                    <button onClick={() => handleDelete(goal.id)} className="text-slate-300 hover:text-rose-500 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  <div className="mb-6">
+                    <div className="h-12 w-12 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400">
+                      {getIcon(goal.name)}
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white font-headline">{goal.name}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{t('deadline')}: {goal.deadline || 'No date'}</p>
+                  </div>
+                  <div className="mb-8">
+                    <div className="flex justify-between items-end mb-2">
+                      <div>
+                        <span className="text-3xl font-extrabold text-slate-900 dark:text-white font-headline">{formatter.format(goal.saved_amount)}</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm"> / {formatter.format(goal.target_amount)}</span>
+                      </div>
+                      <span className={`font-bold text-sm px-2 py-1 rounded-full ${percentage >= 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'}`}>
+                        {percentage.toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div className={`h-full transition-all duration-1000 rounded-full ${percentage >= 100 ? 'bg-emerald-500' : 'bg-indigo-600'}`} style={{ width: `${percentage}%` }}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder={t('amount')}
+                      value={contributionInputs[goal.id] || ''}
+                      onChange={(e) => setContributionInputs({ ...contributionInputs, [goal.id]: e.target.value })}
+                      className="flex-1 bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                    />
+                    <button 
+                      onClick={() => handleContribution(goal.id, goal.saved_amount)}
+                      className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-indigo-700 transition active:scale-95"
+                    >
+                      {t('add')}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Goal Insights Banner */}
+          <div className="bg-indigo-600 dark:bg-indigo-700 text-white rounded-2xl overflow-hidden relative p-10 flex flex-col md:flex-row items-center gap-10 shadow-xl shadow-indigo-900/10">
+            <div className="relative z-10 md:w-2/3">
+              <span className="text-xs font-bold uppercase tracking-[0.2em] opacity-80 mb-4 block">Fiscal Momentum</span>
+              <h2 className="text-4xl font-extrabold tracking-tight mb-4 font-headline leading-tight">
+                You're on track to reach all goals by late 2025.
+              </h2>
+              <p className="text-indigo-100 text-lg font-light">
+                Based on your current average monthly contribution, we recommend adjusting your deadlines to optimize for the fiscal year-end.
+              </p>
+            </div>
+            <div className="relative z-10 md:w-1/3 flex justify-center">
+              <div className="relative h-32 w-32">
+                <svg className="h-full w-full rotate-[-90deg]" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="16" fill="none" className="stroke-white/10" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="16" fill="none" className="stroke-emerald-400 transition-all duration-1000" strokeWidth="3" strokeDasharray={`${overallProgress}, 100`} strokeLinecap="round" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-extrabold font-headline">{overallProgress}%</span>
+                  <span className="text-[10px] uppercase font-bold tracking-widest opacity-70">Overall</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

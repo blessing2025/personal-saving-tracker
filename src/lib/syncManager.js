@@ -48,7 +48,11 @@ export const syncData = async (userId) => {
         .filter(item => table === 'profiles' ? item.id === userId : item.user_id === userId)
         .map(({ synced_at, ...item }) => {
           const payload = { ...item };
-          if (table !== 'profiles') payload.user_id = userId;
+          if (table === 'profiles') {
+            payload.id = userId; // Force ID to match current authenticated user
+          } else {
+            payload.user_id = userId;
+          }
           return payload;
       });
 

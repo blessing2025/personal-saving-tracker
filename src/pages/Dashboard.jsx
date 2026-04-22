@@ -47,7 +47,7 @@ const Dashboard = () => {
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Personal Saving Tracker</p>
           <h1 className="text-5xl font-extrabold tracking-tighter text-slate-900 dark:text-white">
-            {t('welcomeBack')}, {profile?.full_name?.split(' ')[0] || ''}.
+            {t('welcomeBack')}, {profile?.full_name?.split(' ')[0] || user?.user_metadata?.firstName || user?.email?.split('@')[0] || ''}.
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2 font-medium">
             Financial summary for current period
@@ -156,11 +156,6 @@ const Dashboard = () => {
       </div>
 
       {/* Contextual FAB */}
-      <div className="fixed bottom-10 right-10 z-50">
-        <button className="w-16 h-16 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-indigo-200 dark:shadow-none hover:scale-110 transition-transform active:scale-95 hover:bg-indigo-700">
-          <Plus size={32} />
-        </button>
-      </div>
     </div>
   );
 };

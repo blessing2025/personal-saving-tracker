@@ -42,6 +42,11 @@ export default function Reports() {
   const ratio = totalExpense > 0 ? (totalIncome / totalExpense).toFixed(2) : totalIncome > 0 ? '∞' : '0.00';
   
   const liquidityScore = Math.min(Math.round((totalIncome / (totalExpense || 1)) * 50), 100);
+  
+  // Calculate dynamic Growth Vector (Savings Rate) and Liability Count
+  const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100).toFixed(1) : "0.0";
+  const flaggedLiabilities = expenses?.filter(e => e.amount > 500).length || 0;
+
   const recentActivity = [
     ...(incomes || []).map(i => ({ ...i, type: 'income' })),
     ...(expenses || []).map(e => ({ ...e, type: 'expense' }))
@@ -248,7 +253,7 @@ export default function Reports() {
           </div>
           <h3 className="font-headline font-bold text-lg text-indigo-900 dark:text-white mb-2">{t('growthVector')}</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">{t('growthVectorMsg')}</p>
-          <div className="text-2xl font-extrabold font-headline text-emerald-600 dark:text-emerald-400">+14.2%</div>
+          <div className="text-2xl font-extrabold font-headline text-emerald-600 dark:text-emerald-400">+{savingsRate}%</div>
         </div>
 
         <div className="md:col-span-4 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
@@ -267,7 +272,7 @@ export default function Reports() {
           </div>
           <h3 className="font-headline font-bold text-lg text-indigo-900 dark:text-white mb-2">{t('liabilityAlert')}</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">{t('liabilityAlertMsg')}</p>
-          <div className="text-2xl font-extrabold font-headline text-rose-600 dark:text-rose-400">2 {t('actions')}</div>
+          <div className="text-2xl font-extrabold font-headline text-rose-600 dark:text-rose-400">{flaggedLiabilities} {t('actions')}</div>
         </div>
 
         {/* Full Ledger Table */}
@@ -324,9 +329,9 @@ export default function Reports() {
       {/* Footer Branding */}
       <footer className="mt-20 py-10 flex justify-between items-center border-t border-slate-200 dark:border-slate-800 opacity-40">
         <div className="flex items-center space-x-2">
-          <span className="text-xl font-bold font-headline text-indigo-900 dark:text-indigo-400">FA</span>
+          <span className="text-xl font-bold font-headline text-indigo-900 dark:text-indigo-400">PST</span>
           <span className="h-4 w-[1px] bg-indigo-900 dark:bg-indigo-400"></span>
-          <span className="text-[10px] font-bold tracking-[0.2em] uppercase dark:text-white">Fiscal Atelier Editorial System</span>
+          <span className="text-[10px] font-bold tracking-[0.2em] uppercase dark:text-white">Personal Saving Tracker System</span>
         </div>
         <div className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
           © 2023 All Rights Reserved

@@ -1,6 +1,7 @@
-# Premium Personal Saving Tracker
+# Personal Saving Tracker
+### Premium Financial Management
 
-A high-end, editorial-style financial management application designed for precision and elegance. "The Fiscal Atelier" combines robust ledger tracking with professional-grade analytics.
+A high-end, editorial-style financial management application designed for precision and elegance. "Personal Saving Tracker" combines robust ledger tracking with professional-grade analytics.
 
 ## ✨ Features
 - **Editorial Dashboard:** A bento-grid layout providing immediate financial insights and savings velocity.
@@ -24,4 +25,4 @@ A high-end, editorial-style financial management application designed for precis
 4. Run the development server: `npm run dev`
 
 ---
-*© 2023 Fiscal Atelier Editorial System. All Rights Reserved.*
+*© 2023 Personal Saving Tracker System. All Rights Reserved.*
