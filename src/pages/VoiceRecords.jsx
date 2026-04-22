@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
@@ -10,24 +11,12 @@ export default function VoiceRecords() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
-  const [recordings, setRecordings] = useState([]);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
 
-  const fetchRecordings = useCallback(async () => {
-    if (!user) return;
-    try {
-      // Note: Ensure 'voiceRecords' is added to your Dexie schema in db.js
-      const data = await db.voiceRecords.where('user_id').equals(user.id).toArray();
-      setRecordings(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
-    } catch (err) {
-      console.error("Storage error: Ensure 'voiceRecords' table is defined in Dexie schema.", err);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchRecordings();
-  }, [fetchRecordings]);
+  const recordings = useLiveQuery(() => 
+    user ? db.voiceRecords.where('user_id').equals(user.id).toArray() : []
+  , [user]) || [];
 
   const startRecording = async () => {
     try {
@@ -48,7 +37,6 @@ export default function VoiceRecords() {
           date: new Date().toISOString()
         });
         toast.success(t('voiceNoteSaved'));
-        fetchRecordings();
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -69,7 +57,6 @@ export default function VoiceRecords() {
   const deleteRecording = async (id) => {
     if (!window.confirm(t('deleteConfirm'))) return;
     await db.voiceRecords.delete(id);
-    fetchRecordings();
     toast.success('Recording deleted');
   };
 

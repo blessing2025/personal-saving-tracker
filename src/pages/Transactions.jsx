@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNumberFormatter } from 'react-aria';
 import { db } from '../lib/db';
@@ -49,23 +49,23 @@ export default function Transactions() {
     , [user]) || [];
 
   // Combine and filter
-  const allTransactions = [
+  const allTransactions = useMemo(() => [
     ...incomes.map(i => ({ ...i, type: 'income', tableName: 'incomes' })),
     ...expenses.map(e => ({ ...e, type: 'expense', tableName: 'expenses' }))
-  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+  ].sort((a, b) => new Date(b.date) - new Date(a.date)), [incomes, expenses]);
 
-  const filteredTransactions = allTransactions.filter(t => {
+  const filteredTransactions = useMemo(() => allTransactions.filter(t => {
     if (filter === 'income') return t.type === 'income';
     if (filter === 'expense') return t.type === 'expense';
     return true;
-  });
+  }), [allTransactions, filter]);
 
   // Summary Calculations (Current Month)
   const now = new Date();
-  const currentMonthTransactions = allTransactions.filter(t => {
+  const currentMonthTransactions = useMemo(() => allTransactions.filter(t => {
     const d = new Date(t.date);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
+  }), [allTransactions]);
 
   const totalInflow = currentMonthTransactions
     .filter(t => t.type === 'income')
