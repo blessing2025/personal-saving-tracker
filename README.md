@@ -1,5 +1,4 @@
-# The Fiscal Atelier 🏛️
-### Premium Personal Saving Tracker
+# Premium Personal Saving Tracker
 
 A high-end, editorial-style financial management application designed for precision and elegance. "The Fiscal Atelier" combines robust ledger tracking with professional-grade analytics.
 
