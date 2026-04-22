@@ -1,16 +1,28 @@
-# React + Vite
+# The Fiscal Atelier 🏛️
+### Premium Personal Saving Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A high-end, editorial-style financial management application designed for precision and elegance. "The Fiscal Atelier" combines robust ledger tracking with professional-grade analytics.
 
-Currently, two official plugins are available:
+## ✨ Features
+- **Editorial Dashboard:** A bento-grid layout providing immediate financial insights and savings velocity.
+- **Performance Reports:** Detailed year-to-date comparative analysis with high-fidelity PDF export capabilities.
+- **Hybrid Storage:** Seamless offline-first experience using **Dexie.js** with cloud synchronization via **Supabase**.
+- **Voice Expense Tracking:** Hands-free expense logging using integrated voice notes.
+- **Adaptive Interface:** Fully optimized for both Light and Dark modes with a focus on high-contrast accessibility.
+- **Global Ready:** Built-in localization support for English and French, including dynamic currency formatting.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Tech Stack
+- **Framework:** React 19 + Vite
+- **Styling:** Tailwind CSS 4 (OKLCH Color Support)
+- **Database:** IndexedDB (Dexie) + Supabase
+- **Icons:** Lucide React
+- **Charts:** Recharts
 
-## React Compiler
+## 🚀 Getting Started
+1. Clone the repository.
+2. Install dependencies: `npm install`
+3. Configure environment variables in `.env`.
+4. Run the development server: `npm run dev`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+*© 2023 Fiscal Atelier Editorial System. All Rights Reserved.*
