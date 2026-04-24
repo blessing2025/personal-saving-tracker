@@ -25,4 +25,4 @@ A high-end, editorial-style financial management application designed for precis
 4. Run the development server: `npm run dev`
 
 ---
-*© 2023 Personal Saving Tracker System. All Rights Reserved.*
+*© 2026 Personal Saving Tracker System. All Rights Reserved.*

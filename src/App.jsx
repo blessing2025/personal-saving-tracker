@@ -7,6 +7,7 @@ import Navbar from './components/layout/Navbar';
 import Dashboard from './pages/Dashboard';
 import Register from './pages/Register'; // Import Register
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import Transactions from './pages/Transactions';
 import Reports from './pages/Reports';
 import IncomePage from './pages/IncomePage';
@@ -15,6 +16,7 @@ import GoalPage from './pages/GoalPage';
 import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import VoiceRecords from './pages/VoiceRecords';
+import LoadingScreen from './components/common/LoadingScreen';
 import { db } from './lib/db';
 import { useOfflineSync } from './hooks/useOfflineSync'; // Import the offline sync hook
 import { Toaster } from 'react-hot-toast';
@@ -41,7 +43,7 @@ export const useTranslation = () => useContext(TranslationContext);
 // This internal component ensures hooks that use AuthContext are inside the Provider
 const AppContent = () => {
   useOfflineSync(); // Initialize offline synchronization
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   const profile = useLiveQuery(
     () => (user ? db.profiles.get(user.id) : null),
@@ -75,15 +77,40 @@ const AppContent = () => {
     return translations[matchedLang]?.[key] || translations['en-US']?.[key] || key;
   }, [profile?.language]);
 
+  // Centralized date formatting based on user preference from settings
+  const formatDate = useCallback((dateInput) => {
+    if (!dateInput) return '';
+    const date = new Date(dateInput);
+    const formatStr = profile?.date_format || 'DD/MM/YYYY';
+    
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+
+    switch (formatStr) {
+      case 'MM/DD/YYYY':
+        return `${mm}/${dd}/${yyyy}`;
+      case 'YYYY-MM-DD':
+        return `${yyyy}-${mm}-${dd}`;
+      default:
+        return `${dd}/${mm}/${yyyy}`;
+    }
+  }, [profile?.date_format]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <I18nProvider locale={profile?.language || 'en-US'}>
-      <TranslationContext.Provider value={{ t, profile }}>
+      <TranslationContext.Provider value={{ t, profile, formatDate }}>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
         <Toaster position="top-right" />
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Private Routes wrapped in both Authentication and the App Shell Layout */}
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

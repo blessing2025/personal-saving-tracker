@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useForm } from 'react-hook-form';
 import { useNumberFormatter } from 'react-aria';
@@ -18,12 +18,13 @@ import {
   ArrowRight,
   CreditCard,
   ShoppingBasket,
-  Plus
+  Plus,
+  Tag
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function ExpensePage() {
-  const { t, profile } = useTranslation();
+  const { t, profile, formatDate } = useTranslation();
   const { user } = useAuth();
   const { register, handleSubmit, reset } = useForm();
 
@@ -32,8 +33,9 @@ export default function ExpensePage() {
     Food: <Utensils size={18} />,
     Transport: <Car size={18} />,
     Groceries: <ShoppingBasket size={18} />,
-    Utilities: <Zap size={18} />,
-    Other: <MoreHorizontal size={18} />
+    Bills: <Tag size={18} />,
+    Other: <MoreHorizontal size={18} />,
+    Entertainment: <Lightbulb size={18} />,
   };
 
   const formatter = useNumberFormatter({
@@ -44,7 +46,7 @@ export default function ExpensePage() {
 
   // Reactive data fetching
   const expenses = useLiveQuery(() => 
-    db.expenses.where('user_id').equals(user?.id || '').toArray()
+    db.expenses.where('user_id').equals(user?.id || '').filter(item => !item._deleted).toArray()
   , [user]);
 
   // Calculate metrics
@@ -68,9 +70,6 @@ export default function ExpensePage() {
   const prevMonthTotal = lastMonthExpenses.reduce((sum, item) => sum + parseFloat(item.amount), 0);
   const variance = prevMonthTotal > 0 ? ((totalMonthly - prevMonthTotal) / prevMonthTotal) * 100 : 0;
   
-  const budgetLimit = 1000; // Simulated limit, could be connected to Goals
-  const budgetUsage = Math.min((totalMonthly / budgetLimit) * 100, 100);
-
   const onSubmit = async (data) => {
     try {
       await db.expenses.add({
@@ -78,7 +77,6 @@ export default function ExpensePage() {
         user_id: user.id,
         amount: parseFloat(data.amount),
         category: data.category,
-        description: data.description,
         date: new Date().toISOString(),
         synced_at: null
       });
@@ -90,10 +88,36 @@ export default function ExpensePage() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm(t('deleteConfirm'))) {
-      await db.expenses.delete(id);
+    try {
+      const originalItem = await db.expenses.get(id);
+      await db.expenses.update(id, { _deleted: true, synced_at: null });
+      
+      toast((tToast) => (
+        <div className="flex items-center justify-between gap-4 min-w-[220px]">
+          <span className="text-sm font-medium">{t('deleteSuccess')}</span>
+          <button 
+            onClick={async () => {
+              await db.expenses.update(id, { _deleted: false, synced_at: originalItem.synced_at });
+              toast.dismiss(tToast.id);
+              toast.success(t('restored'));
+            }}
+            className="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter hover:bg-black transition-colors"
+          >
+            {t('undo')}
+          </button>
+        </div>
+      ), { duration: 5000 });
+    } catch (err) {
+      toast.error('Failed to delete expense');
     }
   };
+
+  // Sort expenses by date descending so new entries appear on top
+  const recentExpenses = useMemo(() => {
+    return [...(expenses || [])]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [expenses]);
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-screen-2xl mx-auto space-y-10">
@@ -150,8 +174,9 @@ export default function ExpensePage() {
                   <option value="Rent">{t('categoryRent') || 'Rent'}</option>
                   <option value="Food">{t('categoryFood') || 'Food'}</option>
                   <option value="Transport">{t('categoryTransport') || 'Transport'}</option>
-                  <option value="Groceries">Groceries</option>
-                  <option value="Utilities">Utilities</option>
+                  <option value="Groceries">{t('Groceries') || 'Groceries'}</option>
+                  <option value="Bills">{t('Bills') || 'Bills'}</option>
+                  <option value="Entertainment">{t('Entertainment') || 'Entertainment'}</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
@@ -165,45 +190,13 @@ export default function ExpensePage() {
                   step="0.01" 
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('description')}</label>
-                <textarea 
-                  {...register('description')}
-                  className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl p-3 text-slate-800 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-body outline-none" 
-                  placeholder="Description of the expense..." 
-                  rows="3"
-                ></textarea>
-              </div>
               <button className="w-full bg-rose-600 text-white font-bold py-4 rounded-full active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-200 dark:shadow-none" type="submit">
                 <CreditCard size={20} />
                 {t('add')}
               </button>
             </form>
           </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
-            <h2 className="text-xl font-bold font-headline text-slate-800 dark:text-white mb-2">Spending Insight</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">You have utilized {budgetUsage.toFixed(0)}% of your monthly budget.</p>
-            <div className="space-y-4">
-              <div className="w-full bg-slate-100 dark:bg-slate-700 h-4 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-1000 ${budgetUsage > 90 ? 'bg-rose-500' : 'bg-gradient-to-r from-indigo-500 to-rose-500'}`} 
-                  style={{ width: `${budgetUsage}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between items-center text-sm font-bold">
-                <span className="text-slate-800 dark:text-slate-200">{formatter.format(totalMonthly)} used</span>
-                <span className="text-slate-500">Limit: {formatter.format(budgetLimit)}</span>
-              </div>
-            </div>
-            <div className="mt-8 p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-start gap-4 border border-indigo-100 dark:border-indigo-800">
-              <Lightbulb className="text-indigo-600 dark:text-indigo-400 shrink-0" size={20} />
-              <p className="text-xs text-indigo-900 dark:text-indigo-200 font-medium leading-relaxed">
-                Strategy: Reducing Dining expenses by 15% next week could help you stay within your primary goal.
-              </p>
-            </div>
           </div>
-        </div>
 
         {/* Right Column: Recent Table */}
         <div className="lg:col-span-7">
@@ -225,9 +218,9 @@ export default function ExpensePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                  {expenses?.slice(0, 5).map((item) => (
+                  {recentExpenses.map((item) => (
                     <tr key={item.id} className="group hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="py-5 font-medium text-slate-600 dark:text-slate-400">{new Date(item.date).toLocaleDateString(profile?.language, { month: 'short', day: 'numeric' })}</td>
+                      <td className="py-5 font-medium text-slate-600 dark:text-slate-400">{formatDate(item.date)}</td>
                       <td className="py-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300">
@@ -248,16 +241,6 @@ export default function ExpensePage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-
-            <div className="mt-12 p-6 bg-slate-50 dark:bg-slate-900/40 rounded-2xl flex items-center gap-6 border border-slate-100 dark:border-slate-800">
-              <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0">
-                <Zap className="text-white" size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold font-headline text-slate-800 dark:text-white">Smart Categorization</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 leading-snug">Our system automatically logs recurring expenses to spot waste faster.</p>
-              </div>
             </div>
           </div>
         </div>

@@ -14,18 +14,14 @@ import {
   ShieldCheck,
   Trash2,
   Laptop,
-  TrendingUp,
   Utensils,
   Home,
   Car,
-  Tag,
-  ArrowRight,
-  Plus
+  Tag
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export default function Transactions() {
-  const { t, profile } = useTranslation();
+  const { t, profile, formatDate } = useTranslation();
   const { user } = useAuth();
   const [filter, setFilter] = useState('all'); // 'all', 'income', 'expense'
 
@@ -35,17 +31,17 @@ export default function Transactions() {
     currencyDisplay: 'narrowSymbol'
   });
 
+  // Reactive data fetching
+  const incomes = useLiveQuery(() =>
+    user ? db.incomes.where('user_id').equals(user.id).filter(item => !item._deleted).toArray() : []
+    , [user]) || [];
+
   const expenses = useLiveQuery(() =>
-    user ? db.expenses.where('user_id').equals(user.id).toArray() : []
+    user ? db.expenses.where('user_id').equals(user.id).filter(item => !item._deleted).toArray() : []
     , [user]) || [];
 
   const goals = useLiveQuery(() =>
-    user ? db.goals.where('user_id').equals(user.id).toArray() : []
-    , [user]) || [];
-
-  // Reactive data fetching
-  const incomes = useLiveQuery(() =>
-    user ? db.incomes.where('user_id').equals(user.id).toArray() : []
+    user ? db.goals.where('user_id').equals(user.id).filter(item => !item._deleted).toArray() : []
     , [user]) || [];
 
   // Combine and filter
@@ -99,10 +95,25 @@ export default function Transactions() {
   const overallProgress = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
 
   const handleDelete = async (table, id) => {
-    if (!window.confirm(t('deleteConfirm'))) return;
     try {
-      await db[table].delete(id);
-      toast.success(t('deleteSuccess') || 'Transaction deleted');
+      const originalItem = await db[table].get(id);
+      await db[table].update(id, { _deleted: true, synced_at: null });
+      
+      toast((tToast) => (
+        <div className="flex items-center justify-between gap-4 min-w-[220px]">
+          <span className="text-sm font-medium">{t('deleteSuccess')}</span>
+          <button 
+            onClick={async () => {
+              await db[table].update(id, { _deleted: false, synced_at: originalItem.synced_at });
+              toast.dismiss(tToast.id);
+              toast.success(t('restored'));
+            }}
+            className="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter hover:bg-black transition-colors"
+          >
+            {t('undo')}
+          </button>
+        </div>
+      ), { duration: 5000 });
     } catch (err) {
       toast.error('Failed to delete');
     }
@@ -163,7 +174,6 @@ export default function Transactions() {
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
                     <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('date')}</th>
-                    <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('description')}</th>
                     <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('category')}</th>
                     <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400 text-right">{t('amount')}</th>
                   </tr>
@@ -173,16 +183,8 @@ export default function Transactions() {
                     <tr key={`${item.tableName}-${item.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
                       <td className="px-6 py-5">
                         <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                          {new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          {formatDate(item.date)}
                         </span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 transition-colors">
-                            {item.source || item.description || t('entry')}
-                          </span>
-                          <span className="text-[10px] text-slate-400 uppercase tracking-tighter">ID: #{item.id.slice(0, 8)}</span>
-                        </div>
                       </td>
                       <td className="px-6 py-5">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${

@@ -1,19 +1,21 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { useTranslation } from '../App';
 import { useAuth } from '../contexts/AuthContext';
 import { TrendingUp, Wallet, Receipt, Plus, Calendar, MoreHorizontal, ShoppingBag, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient'; // Import supabase client
+import toast from 'react-hot-toast';
 
 const Dashboard = () => {
-  const { t, profile } = useTranslation();
+  const { t, profile, formatDate } = useTranslation();
   const { user } = useAuth();
 
   // Fetch data from Dexie
-  const incomes = useLiveQuery(() => db.incomes.where('user_id').equals(user?.id || '').toArray(), [user]);
-  const expenses = useLiveQuery(() => db.expenses.where('user_id').equals(user?.id || '').toArray(), [user]);
-
+  const incomes = useLiveQuery(() => db.incomes.where('user_id').equals(user?.id || '').filter(item => !item._deleted).toArray(), [user]);
+  const expenses = useLiveQuery(() => db.expenses.where('user_id').equals(user?.id || '').filter(item => !item._deleted).toArray(), [user]);
+  
   // Calculate Totals
   const totalIncome = incomes?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
   const totalExpense = expenses?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
@@ -24,6 +26,74 @@ const Dashboard = () => {
     ...(incomes || []).map(i => ({ ...i, type: 'income' })),
     ...(expenses || []).map(e => ({ ...e, type: 'expense' }))
   ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 4);
+
+  // Project Information Calculations
+  // Memoize 'now' to prevent unnecessary re-runs of all dependent hooks/effects
+  const now = useMemo(() => new Date(), []);
+  
+  // Monthly Flow Data (Last 6 Months)
+  const monthlyData = useMemo(() => {
+    const data = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleString('default', { month: 'short' });
+      const value = incomes
+        ?.filter(inc => {
+          const incDate = new Date(inc.date);
+          return incDate.getMonth() === d.getMonth() && incDate.getFullYear() === d.getFullYear();
+        })
+        .reduce((sum, inc) => sum + inc.amount, 0) || 0;
+      data.push({ label, value });
+    }
+    return data;
+  }, [incomes, now]);
+
+  const maxIncome = Math.max(...monthlyData.map(d => d.value), 0) || 1;
+  const avgMonthlyIncome = monthlyData.reduce((acc, curr) => acc + curr.value, 0) / 6;
+  const bestMonthAmount = Math.max(...monthlyData.map(d => d.value), 0);
+
+  // Savings Velocity Calculation (Comparison with previous month)
+  const currentMonthStats = useMemo(() => {
+    const inc = incomes?.filter(i => {
+      const d = new Date(i.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).reduce((s, i) => s + i.amount, 0) || 0;
+    const exp = expenses?.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).reduce((s, e) => s + e.amount, 0) || 0;
+    return inc - exp;
+  }, [incomes, expenses, now]);
+
+  const prevMonthStats = useMemo(() => {
+    const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const inc = incomes?.filter(i => {
+      const d = new Date(i.date);
+      return d.getMonth() === pm.getMonth() && d.getFullYear() === pm.getFullYear();
+    }).reduce((s, i) => s + i.amount, 0) || 0;
+    const exp = expenses?.filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === pm.getMonth() && d.getFullYear() === pm.getFullYear();
+    }).reduce((s, e) => s + e.amount, 0) || 0;
+    return inc - exp;
+  }, [incomes, expenses, now]);
+
+  const velocity = prevMonthStats !== 0 
+    ? ((currentMonthStats - prevMonthStats) / Math.abs(prevMonthStats)) * 100 
+    : currentMonthStats > 0 ? 100 : 0;
+
+  // Lifestyle Insight Calculation
+  const topCategory = useMemo(() => {
+    const totals = expenses?.reduce((acc, curr) => {
+      acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
+      return acc;
+    }, {}) || {};
+    return Object.entries(totals).sort((a, b) => b[1] - a[1])[0]?.[0] || 'General';
+  }, [expenses]);
+
+  const lifestyleInsight = topCategory === 'General' 
+    ? "Categorize your expenses to unlock personalized lifestyle insights."
+    : `Your spending in '${topCategory}' is currently your primary focus. Optimizing this area could accelerate your savings momentum.`;
 
   const formatCurrency = (val) => {
     try {
@@ -39,6 +109,36 @@ const Dashboard = () => {
       }).format(val) + ` ${profile?.currency || ''}`;
     }
   };
+
+  // Monthly Summary Alert Trigger
+  useEffect(() => {
+    const triggerSummaryNotification = async () => {
+      if (profile?.monthly_summaries) {
+        const lastSummaryCheck = localStorage.getItem('last_monthly_summary');
+        const currentMonthYear = `${now.getMonth()}-${now.getFullYear()}`;
+        
+        if (lastSummaryCheck !== currentMonthYear) {
+          // Show toast notification
+          toast.success(`📊 ${t('monthlyFinancialSummaries')} available! Check your performance reports.`);
+
+          // Trigger email notification via Edge Function
+          if (user?.email && profile?.monthly_summaries) {
+            await supabase.functions.invoke('send-notification', {
+              body: {
+                type: 'monthly_summary',
+                recipientEmail: user.email,
+                payload: { monthName: now.toLocaleString('default', { month: 'long' }), year: now.getFullYear(), totalIncome, totalExpenses: totalExpense, netSavings: netWorth, currency: profile?.currency || 'USD' }
+              }
+            });
+          }
+
+          localStorage.setItem('last_monthly_summary', currentMonthYear);
+        }
+      }
+    };
+    
+    if (user?.id) triggerSummaryNotification();
+  }, [profile?.monthly_summaries, t, user?.email, user?.id, totalIncome, totalExpense, netWorth, profile?.currency, now]);
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -88,10 +188,10 @@ const Dashboard = () => {
                           <div className={`h-10 w-10 ${act.type === 'income' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-indigo-100 dark:bg-indigo-900/30'} rounded-full flex items-center justify-center`}>
                              {act.type === 'income' ? <Briefcase className="text-emerald-600 dark:text-emerald-400" size={18}/> : <ShoppingBag className="text-indigo-600 dark:text-indigo-400" size={18}/>}
                           </div>
-                          <span className="font-semibold text-slate-700 dark:text-slate-200">{act.source || act.description || 'Entry'}</span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">{act.category || 'Entry'}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-6 text-slate-500 dark:text-slate-400 font-medium">{new Date(act.date).toLocaleDateString()}</td>
+                      <td className="px-8 py-6 text-slate-500 dark:text-slate-400 font-medium">{formatDate(act.date)}</td>
                       <td className="px-8 py-6">
                         <span className="px-3 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300">
                           {act.category || 'General'}
@@ -116,10 +216,10 @@ const Dashboard = () => {
                 {t('editorialInsight')}
               </span>
               <h3 className="text-3xl font-black tracking-tighter mt-6 leading-tight">
-                {t('savingsVelocityMsg')}
+                Savings velocity has {velocity >= 0 ? 'increased' : 'decreased'} by {Math.abs(velocity).toFixed(1)}%.
               </h3>
               <p className="mt-4 text-indigo-100/80 leading-relaxed font-medium">
-                {t('lifestyleInsightMsg')}
+                {lifestyleInsight}
               </p>
             </div>
             <button className="relative z-10 w-full bg-white text-indigo-600 font-bold py-4 rounded-full transition-transform active:scale-95 shadow-xl hover:bg-slate-50">
@@ -134,21 +234,25 @@ const Dashboard = () => {
               <MoreHorizontal className="text-slate-400 cursor-pointer" />
             </div>
             <div className="flex items-end gap-2 h-40 mb-6">
-              {[40, 65, 55, 90, 45, 75].map((h, i) => (
-                <div key={i} style={{ height: `${h}%` }} className={`flex-1 ${h === 90 ? 'bg-indigo-600' : 'bg-slate-100 dark:bg-slate-700'} rounded-t-lg transition-all hover:bg-indigo-400`} />
+              {monthlyData.map((d, i) => (
+                <div 
+                  key={i} 
+                  style={{ height: `${(d.value / maxIncome) * 100}%` }} 
+                  className={`flex-1 ${d.value === bestMonthAmount && d.value > 0 ? 'bg-indigo-600' : 'bg-slate-100 dark:bg-slate-700'} rounded-t-lg transition-all hover:bg-indigo-400 group relative`}
+                />
               ))}
             </div>
             <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8">
-              <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
+              {monthlyData.map((d, i) => <span key={i}>{d.label}</span>)}
             </div>
             <div className="pt-8 border-t border-slate-100 dark:border-slate-700 flex justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t('averageMonthly')}</p>
-                <p className="text-xl font-extrabold mt-1 dark:text-white">$9,240</p>
+                <p className="text-xl font-extrabold mt-1 dark:text-white">{formatCurrency(avgMonthlyIncome)}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">{t('bestMonth')}</p>
-                <p className="text-xl font-extrabold mt-1 text-emerald-600 dark:text-emerald-400">$12,450</p>
+                <p className="text-xl font-extrabold mt-1 text-emerald-600 dark:text-emerald-400">{formatCurrency(bestMonthAmount)}</p>
               </div>
             </div>
           </div>

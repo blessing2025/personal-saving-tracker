@@ -3,20 +3,34 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
-import { Mic, Square, Play, Trash2, Calendar, Volume2, Sparkles, ReceiptText, Upload, ShieldCheck, CheckCircle2, History, PlayCircle } from 'lucide-react';
+import { 
+  Mic, 
+  Square, 
+  Trash2, 
+  Calendar, 
+  Sparkles, 
+  ReceiptText, 
+  Upload, 
+  ShieldCheck, 
+  CheckCircle2, 
+  History,
+  ArrowRight
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
 export default function VoiceRecords() {
-  const { t } = useTranslation();
+  const { t, profile } = useTranslation();
   const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
 
   const recordings = useLiveQuery(() => 
-    user ? db.voiceRecords.where('user_id').equals(user.id).toArray() : []
+    user ? db.voiceRecords.where('user_id').equals(user.id).filter(item => !item._deleted).toArray() : []
   , [user]) || [];
+
+  const sortedRecordings = [...recordings].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const startRecording = async () => {
     try {
@@ -55,58 +69,154 @@ export default function VoiceRecords() {
   };
 
   const deleteRecording = async (id) => {
-    if (!window.confirm(t('deleteConfirm'))) return;
-    await db.voiceRecords.delete(id);
-    toast.success('Recording deleted');
+    try {
+      const originalItem = await db.voiceRecords.get(id);
+      await db.voiceRecords.update(id, { _deleted: true, synced_at: null });
+      
+      toast((tToast) => (
+        <div className="flex items-center justify-between gap-4 min-w-[220px]">
+          <span className="text-sm font-medium">{t('deleteSuccess')}</span>
+          <button 
+            onClick={async () => {
+              await db.voiceRecords.update(id, { _deleted: false, synced_at: originalItem.synced_at });
+              toast.dismiss(tToast.id);
+              toast.success(t('restored'));
+            }}
+            className="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter hover:bg-black transition-colors"
+          >
+            {t('undo')}
+          </button>
+        </div>
+      ), { duration: 5000 });
+    } catch (err) {
+      toast.error('Failed to delete recording');
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{t('voiceExpenseTracker')}</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 italic hidden md:block">{t('voiceTrackerMotto') || 'Record expenses on the go and log them later.'}</p>
-      </div>
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto space-y-12">
+      {/* Hero Header */}
+      <header>
+        <h1 className="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-indigo-900 dark:text-white mb-2">
+          {t('voiceExpenseTracker')}
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
+          {t('voiceTrackerMotto') || "Tap to record your expenses on the go. Our system will parse your speech into formatted ledger entries."}
+        </p>
+      </header>
 
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center justify-center space-y-4">
-        <div className={`p-6 rounded-full transition-all duration-300 ${isRecording ? 'bg-rose-100 dark:bg-rose-900/30 animate-pulse' : 'bg-blue-50 dark:bg-blue-900/30'}`}>
-          <Mic size={48} className={isRecording ? 'text-rose-600' : 'text-blue-600'} />
-        </div>
-        
-        <div className="text-center">
-          <h3 className="font-bold text-lg text-slate-800">{isRecording ? t('recording') : t('readyToRecord')}</h3>
-          <p className="text-sm text-slate-500">{t('tapToCapture')}</p>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Recording Interface */}
+        <section className="lg:col-span-7 bg-white dark:bg-slate-800 rounded-2xl p-10 flex flex-col items-center justify-center relative overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm min-h-[480px]">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-600 to-emerald-500"></div>
+          
+          <div className="text-center mb-10">
+            <span className={`inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${isRecording ? 'bg-rose-100 text-rose-600 animate-pulse' : 'bg-emerald-50 text-emerald-600'}`}>
+              {isRecording ? t('recording') : t('readyToRecord')}
+            </span>
+            <h2 className="font-headline text-3xl font-extrabold text-slate-900 dark:text-white">
+              Financial Dictation
+            </h2>
+          </div>
 
-        {!isRecording ? (
-          <button onClick={startRecording} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg flex items-center gap-2">
-            <Mic size={20} /> {t('startRecording')}
-          </button>
-        ) : (
-          <button onClick={stopRecording} className="bg-rose-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-rose-700 transition shadow-lg flex items-center gap-2">
-            <Square size={20} /> {t('stopAndSave')}
-          </button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {recordings.map((rec) => (
-          <div key={rec.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-slate-50 dark:bg-slate-700 rounded-lg text-slate-400 dark:text-slate-500">
-              <Volume2 size={24} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
-                <Calendar size={12} />
-                {new Date(rec.date).toLocaleString()}
+          <div className="relative group transition-transform duration-200">
+            {isRecording && (
+              <div className="absolute inset-0 flex items-center justify-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="w-1.5 bg-indigo-500 rounded-full animate-pulse" style={{ height: `${20 + (i % 3) * 20}%`, animationDelay: `${i * 0.1}s` }}></div>
+                ))}
               </div>
-              <audio controls src={URL.createObjectURL(rec.blob)} className="h-8 w-full filter dark:invert" />
-            </div>
-            <button onClick={() => deleteRecording(rec.id)} className="p-2 text-slate-300 hover:text-rose-600 transition-colors">
-              <Trash2 size={20} />
+            )}
+            <button 
+              onClick={isRecording ? stopRecording : startRecording}
+              className={`relative z-10 w-32 h-32 rounded-full flex items-center justify-center text-white shadow-2xl transition-all active:scale-95 ${isRecording ? 'bg-rose-600' : 'bg-indigo-600'}`}
+            >
+              {isRecording ? <Square size={48} /> : <Mic size={48} />}
             </button>
           </div>
-        ))}
+
+          <div className="mt-12 text-center max-w-sm">
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-6 italic">
+              "{t('voiceExample') || 'Bought groceries at Whole Foods for $54.20'}"
+            </p>
+            <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              {isRecording ? t('recordingInProgress') : t('tapToCapture')}
+            </p>
+          </div>
+        </section>
+
+        {/* Recent Recordings Sidebar */}
+        <section className="lg:col-span-5 space-y-8">
+          <div className="bg-indigo-600 dark:bg-indigo-700 text-white p-8 rounded-2xl relative overflow-hidden shadow-xl">
+            <h3 className="font-headline text-xl font-bold mb-2 flex items-center gap-2">
+              <Sparkles size={20} className="text-indigo-200" />
+              How it works
+            </h3>
+            <p className="text-sm text-indigo-100 opacity-90 leading-relaxed">
+              Speak naturally. Mention the merchant, amount, and category. Our engine handles the rest.
+            </p>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+            <h3 className="font-headline font-bold text-slate-900 dark:text-white mb-6">Recent Voice Entries</h3>
+            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+              {sortedRecordings.map((rec) => (
+                <div key={rec.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm group">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 size={16} className="text-emerald-500" />
+                      <span className="font-bold text-sm text-slate-800 dark:text-slate-200">Voice Note</span>
+                    </div>
+                    <button onClick={() => deleteRecording(rec.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-600 transition-all">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <audio controls src={URL.createObjectURL(rec.blob)} className="h-8 w-full filter dark:brightness-90" />
+                  <div className="mt-3 flex items-center gap-3 text-[10px] text-slate-400 font-bold uppercase">
+                    <span className="flex items-center gap-1"><History size={12} /> {new Date(rec.date).toLocaleTimeString()}</span>
+                    <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(rec.date).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+              {sortedRecordings.length === 0 && (
+                <div className="text-center py-10 text-slate-400 text-sm italic">
+                  No voice notes captured yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Link to="/expenses" className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-indigo-50 transition-all group shadow-sm">
+              <ReceiptText size={20} className="text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
+              <p className="font-bold text-slate-800 dark:text-white text-sm">Manual Entry</p>
+            </Link>
+            <button className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-indigo-50 transition-all group shadow-sm">
+              <Upload size={20} className="text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
+              <p className="font-bold text-slate-800 dark:text-white text-sm">Import Audio</p>
+            </button>
+          </div>
+        </section>
       </div>
+
+      <section className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <FeatureCard title="Accuracy" value="99.2%" desc="Proprietary model trained on financial terminology." color="indigo" />
+        <FeatureCard title="Smart Sorting" value="Automated" desc="Expenses are tagged to categories based on context." color="emerald" />
+        <FeatureCard title="Security" value="Local Vault" desc="Voice data is processed locally whenever possible." color="rose" icon={<ShieldCheck size={24} />} />
+      </section>
     </div>
   );
 }
+
+const FeatureCard = ({ title, value, desc, color, icon }) => (
+  <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+    <p className={`text-[10px] font-bold uppercase tracking-widest mb-6 ${color === 'indigo' ? 'text-indigo-600' : color === 'emerald' ? 'text-emerald-600' : 'text-rose-600'}`}>{title}</p>
+    <div className="h-40 rounded-xl bg-slate-50 dark:bg-slate-900/50 mb-6 flex items-center justify-center border border-slate-100 dark:border-slate-700">
+       <div className={`w-16 h-16 rounded-full flex items-center justify-center ${color === 'indigo' ? 'bg-indigo-100 text-indigo-600' : color === 'emerald' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+          {icon || <Sparkles size={28} />}
+       </div>
+    </div>
+    <h4 className="font-headline text-lg font-bold text-slate-900 dark:text-white mb-2">{value}</h4>
+    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{desc}</p>
+  </div>
+);

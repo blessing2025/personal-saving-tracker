@@ -17,7 +17,15 @@ export const pullData = async (userId) => {
         );
 
       if (error) throw error;
-      if (data) await db[table].bulkPut(data);
+      if (data) {
+        // Identify items that have unsynced local changes (including deletions)
+        const localPending = await db[table].filter(item => !item.synced_at).toArray();
+        const pendingIds = new Set(localPending.map(i => i.id));
+        
+        // Only update local records that are already in sync with the server
+        const toUpdate = data.filter(remoteItem => !pendingIds.has(remoteItem.id));
+        await db[table].bulkPut(toUpdate);
+      }
     } catch (err) {
       console.error(`[Sync] Failed to pull ${table}:`, err);
     }
@@ -31,22 +39,34 @@ export const syncData = async (userId) => {
 
   for (const table of tables) {
     try {
-      // Find records that haven't been synced yet
-      const unsyncedItems = await db[table]
-        .filter(item => !item.synced_at)
-        .toArray();
-
-      // Filter out legacy records with non-UUID IDs (like "1") to avoid Supabase 400s
+      // Find records that haven't been synced yet (includes new, modified, and deleted)
+      const unsyncedItems = await db[table].filter(item => !item.synced_at).toArray();
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const validItems = unsyncedItems.filter(item => uuidRegex.test(item.id));
+      
+      // Filter only items belonging to the current user with valid UUIDs
+      const userItems = unsyncedItems.filter(item => {
+        const belongsToUser = table === 'profiles' ? item.id === userId : item.user_id === userId;
+        return belongsToUser && uuidRegex.test(item.id);
+      });
 
-      if (validItems.length === 0) continue;
+      if (userItems.length === 0) continue;
 
-      // Prepare items for sync
-      // CRITICAL FIX: Only sync records belonging to the current session user.
-      const itemsToPush = validItems
-        .filter(item => table === 'profiles' ? item.id === userId : item.user_id === userId)
-        .map(({ synced_at, ...item }) => {
+      // 1. Handle Deletions: Push removals to Supabase first
+      const itemsToDelete = userItems.filter(item => item._deleted);
+      for (const item of itemsToDelete) {
+        const { error: delError } = await supabase.from(table).delete().eq('id', item.id);
+        if (!delError) {
+          await db[table].delete(item.id); // Hard delete locally once cloud is confirmed
+        } else {
+          console.error(`[Sync] Delete failed for ${table}/${item.id}:`, delError);
+        }
+      }
+
+      // 2. Handle Upserts: Push new/modified records
+      const itemsToUpsert = userItems.filter(item => !item._deleted);
+      if (itemsToUpsert.length === 0) continue;
+
+      const payload = itemsToUpsert.map(({ synced_at, _deleted, ...item }) => {
           const payload = { ...item };
           if (table === 'profiles') {
             payload.id = userId; // Force ID to match current authenticated user
@@ -55,11 +75,9 @@ export const syncData = async (userId) => {
           }
           return payload;
       });
-
-      // 1. Sync to Supabase
       const { data: supabaseData, error: supabaseError } = await supabase
         .from(table)
-        .upsert(itemsToPush, { onConflict: 'id' })
+        .upsert(payload, { onConflict: 'id' })
         .select();
 
       if (supabaseError) {

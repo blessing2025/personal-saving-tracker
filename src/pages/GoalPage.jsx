@@ -6,10 +6,11 @@ import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabaseClient'; // Import supabase client
 import { Target, Plus, Trash2, ArrowRight, Laptop, Car, Palmtree, PlusCircle, MoreVertical } from 'lucide-react';
 
 export default function GoalPage() {
-  const { t, profile } = useTranslation();
+  const { t, profile, formatDate } = useTranslation();
   const { user } = useAuth();
   const { register, handleSubmit, reset } = useForm();
   const [contributionInputs, setContributionInputs] = useState({});
@@ -22,7 +23,7 @@ export default function GoalPage() {
 
   // Reactive data fetching
   const goals = useLiveQuery(() => 
-    db.goals.where('user_id').equals(user?.id || '').toArray()
+    db.goals.where('user_id').equals(user?.id || '').filter(item => !item._deleted).toArray()
   , [user]) || [];
 
   // Calculate overall momentum
@@ -62,7 +63,22 @@ export default function GoalPage() {
         saved_amount: (currentAmount || 0) + parsedAmount,
         synced_at: null
       });
-      toast.success(t('contributionAdded'));
+
+      // Check if goal is completed and send alert if preference is enabled
+      const updatedGoal = await db.goals.get(id);
+      if (updatedGoal && updatedGoal.saved_amount >= updatedGoal.target_amount && profile?.goal_alerts && user?.email) {
+        toast.success(`🎉 ${t('goalCompleted')}!`); // Use a more celebratory toast
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            type: 'goal_completed',
+            recipientEmail: user.email,
+            payload: { goalName: updatedGoal.name, savedAmount: updatedGoal.saved_amount, targetAmount: updatedGoal.target_amount, currency: profile?.currency || 'USD' }
+          }
+        });
+      } else {
+        toast.success(t('contributionAdded'));
+      }
+
       // Clear the input for this specific goal
       setContributionInputs(prev => ({ ...prev, [id]: '' }));
     } catch (err) {
@@ -71,8 +87,27 @@ export default function GoalPage() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm(t('deleteConfirm'))) {
-      await db.goals.delete(id);
+    try {
+      const originalItem = await db.goals.get(id);
+      await db.goals.update(id, { _deleted: true, synced_at: null });
+      
+      toast((tToast) => (
+        <div className="flex items-center justify-between gap-4 min-w-[220px]">
+          <span className="text-sm font-medium">{t('deleteSuccess')}</span>
+          <button 
+            onClick={async () => {
+              await db.goals.update(id, { _deleted: false, synced_at: originalItem.synced_at });
+              toast.dismiss(tToast.id);
+              toast.success(t('restored'));
+            }}
+            className="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter hover:bg-black transition-colors"
+          >
+            {t('undo')}
+          </button>
+        </div>
+      ), { duration: 5000 });
+    } catch (err) {
+      toast.error('Failed to delete goal');
     }
   };
 
@@ -161,7 +196,7 @@ export default function GoalPage() {
                       {getIcon(goal.name)}
                     </div>
                     <h3 className="text-2xl font-bold text-slate-900 dark:text-white font-headline">{goal.name}</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{t('deadline')}: {goal.deadline || 'No date'}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{t('deadline')}: {goal.deadline ? formatDate(goal.deadline) : 'No date'}</p>
                   </div>
                   <div className="mb-8">
                     <div className="flex justify-between items-end mb-2">

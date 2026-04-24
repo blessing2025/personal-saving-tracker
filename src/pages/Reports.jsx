@@ -21,7 +21,7 @@ import { TrendingUp, FileDown, Activity, Zap, AlertTriangle, CheckCircle2, Clock
 import { Link } from 'react-router-dom';
 
 export default function Reports() {
-  const { t, profile } = useTranslation();
+  const { t, profile, formatDate } = useTranslation();
   const { user } = useAuth();
   const barChartRef = useRef(null);
 
@@ -32,8 +32,8 @@ export default function Reports() {
   });
 
   // Fetch raw data using useLiveQuery for reactivity
-  const incomes = useLiveQuery(() => db.incomes.where('user_id').equals(user?.id || '').toArray(), [user]);
-  const expenses = useLiveQuery(() => db.expenses.where('user_id').equals(user?.id || '').toArray(), [user]);
+  const incomes = useLiveQuery(() => db.incomes.where('user_id').equals(user?.id || '').filter(item => !item._deleted).toArray(), [user]);
+  const expenses = useLiveQuery(() => db.expenses.where('user_id').equals(user?.id || '').filter(item => !item._deleted).toArray(), [user]);
 
   // Calculations derived directly from live query data
   const totalIncome = incomes?.reduce((acc, curr) => acc + parseFloat(curr.amount), 0) || 0;
@@ -287,8 +287,8 @@ export default function Reports() {
             <table className="w-full text-left">
               <thead>
                 <tr className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] font-bold">
-                  <th className="pb-6">{t('date')}</th>
-                  <th className="pb-6">{t('transactionLabel')}</th>
+                  <th className="pb-6">{t('date') || 'Date'}</th>
+                  <th className="pb-6">{t('category') || 'Category'}</th>
                   <th className="pb-6">{t('category')}</th>
                   <th className="pb-6 text-right">{t('amount')}</th>
                   <th className="pb-6 text-right">{t('status')}</th>
@@ -298,9 +298,9 @@ export default function Reports() {
                 {recentActivity.map((act, i) => (
                   <tr key={i} className="group hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="py-5 font-medium text-slate-500 dark:text-slate-400">
-                      {new Date(act.date).toLocaleDateString(profile?.language || 'en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {formatDate(act.date)}
                     </td>
-                    <td className="py-5 font-bold text-indigo-900 dark:text-slate-200">{act.source || act.description}</td>
+                    <td className="py-5 font-bold text-indigo-900 dark:text-slate-200">{act.category || 'General'}</td>
                     <td className="py-5">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
                         act.type === 'income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-rose-50 text-rose-600 dark:bg-rose-900/30'
@@ -334,7 +334,7 @@ export default function Reports() {
           <span className="text-[10px] font-bold tracking-[0.2em] uppercase dark:text-white">Personal Saving Tracker System</span>
         </div>
         <div className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-          © 2023 All Rights Reserved
+          © 2026 All Rights Reserved
         </div>
       </footer>
     </div>

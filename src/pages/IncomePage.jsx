@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useForm } from 'react-hook-form';
 import { useNumberFormatter } from 'react-aria';
@@ -6,11 +6,12 @@ import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabaseClient'; // Import supabase client
 import { Trash2, PlusCircle, Filter, Download, ArrowRight, Wallet, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function IncomePage() {
-  const { t, profile } = useTranslation();
+  const { t, profile, formatDate } = useTranslation();
   const { user } = useAuth();
   const { register, handleSubmit, reset } = useForm();
 
@@ -22,7 +23,7 @@ export default function IncomePage() {
 
   // Reactive data fetching
   const incomes = useLiveQuery(() => 
-    db.incomes.where('user_id').equals(user?.id || '').toArray()
+    db.incomes.where('user_id').equals(user?.id || '').filter(item => !item._deleted).toArray()
   , [user]);
 
   const totalMonthly = incomes?.reduce((acc, curr) => acc + parseFloat(curr.amount), 0) || 0;
@@ -35,12 +36,24 @@ export default function IncomePage() {
         id: crypto.randomUUID(),
         user_id: user.id,
         amount: parseFloat(data.amount),
-        source: data.source,
         category: data.category || 'General',
         date: new Date().toISOString(),
         synced_at: null
       });
-      toast.success(t('incomeRecorded') || 'Income added!');
+      
+      // Trigger email notification if preference is enabled
+      if (profile?.email_inflow && user?.email) {
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            type: 'income_added',
+            recipientEmail: user.email,
+            payload: { amount: data.amount, category: data.category, date: new Date().toISOString(), currency: profile?.currency || 'USD' }
+          }
+        });
+        toast.success(`${t('incomeRecorded')} — Confirmation sent to ${user.email}`);
+      } else {
+        toast.success(t('incomeRecorded'));
+      }
       reset();
     } catch (err) {
       toast.error('Failed to add income');
@@ -48,14 +61,36 @@ export default function IncomePage() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm(t('deleteConfirm'))) {
-      await db.incomes.delete(id);
+    try {
+      const originalItem = await db.incomes.get(id);
+      await db.incomes.update(id, { _deleted: true, synced_at: null });
+      
+      toast((tToast) => (
+        <div className="flex items-center justify-between gap-4 min-w-[220px]">
+          <span className="text-sm font-medium">{t('deleteSuccess')}</span>
+          <button 
+            onClick={async () => {
+              await db.incomes.update(id, { _deleted: false, synced_at: originalItem.synced_at });
+              toast.dismiss(tToast.id);
+              toast.success(t('restored'));
+            }}
+            className="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter hover:bg-black transition-colors"
+          >
+            {t('undo')}
+          </button>
+        </div>
+      ), { duration: 5000 });
+    } catch (err) {
+      toast.error('Failed to delete income');
     }
   };
 
-  const recentIncomes = [...(incomes || [])]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
+  // Sort incomes by date descending so new entries appear on top
+  const recentIncomes = useMemo(() => {
+    return [...(incomes || [])]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [incomes]);
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-screen-2xl mx-auto space-y-12">
@@ -90,24 +125,17 @@ export default function IncomePage() {
               </h2>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{t('source')}</label>
-                  <input 
-                    {...register('source', { required: true })}
-                    className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl p-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body" 
-                    placeholder="e.g. Salary, Freelance" 
-                  />
-                </div>
-                <div>
                   <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{t('category')}</label>
                   <select 
                     {...register('category')}
                     className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl p-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body"
                   >
-                    <option value="Employment">{t('categoryEmployment') || 'Employment'}</option>
-                    <option value="Freelance">{t('categoryFreelance') || 'Freelance'}</option>
-                    <option value="Investment">{t('categoryInvestment') || 'Investment'}</option>
-                    <option value="Gift">{t('categoryGift') || 'Gift'}</option>
-                    <option value="Other">{t('categoryOther') || 'Other'}</option>
+                    <option value="">{t('category')}</option>
+                    <option value="Employment">{t('Salary') || 'Salary'}</option>
+                    <option value="Freelance">{t('Freelance') || 'Freelance'}</option>
+                    <option value="Investment">{t('Investment') || 'Investment'}</option>
+                    <option value="Gift">{t('Gift') || 'Gift'}</option>
+                    <option value="Other">{t('Other') || 'Other'}</option>
                   </select>
                 </div>
                 <div>
@@ -149,21 +177,12 @@ export default function IncomePage() {
           <section className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm min-h-full">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white font-headline">{t('transactionHistory')}</h2>
-              <div className="flex gap-2">
-                <button className="bg-slate-50 dark:bg-slate-700 p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors">
-                  <Filter size={18} />
-                </button>
-                <button className="bg-slate-50 dark:bg-slate-700 p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors">
-                  <Download size={18} />
-                </button>
-              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-700">
                     <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4">{t('date')}</th>
-                    <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4">{t('source')}</th>
                     <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4">{t('category')}</th>
                     <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 text-right">{t('amount')}</th>
                     <th className="pb-4 w-10"></th>
@@ -175,13 +194,10 @@ export default function IncomePage() {
                       <td className="py-5 px-4">
                         <div className="flex flex-col">
                           <span className="font-medium text-slate-700 dark:text-slate-300">
-                            {new Date(item.date).toLocaleDateString(profile?.language, { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {formatDate(item.date)}
                           </span>
                           <span className="text-[10px] text-slate-400">{new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                      </td>
-                      <td className="py-5 px-4">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">{item.source}</span>
                       </td>
                       <td className="py-5 px-4">
                         <span className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">

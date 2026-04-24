@@ -1,23 +1,50 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
-import { User, ShieldCheck, Mail, Camera } from 'lucide-react';
+import { 
+  User, 
+  ShieldCheck, 
+  Mail, 
+  Camera, 
+  CheckCircle2, 
+  BadgeCheck, 
+  Sparkles,
+  Smartphone, 
+  Laptop as LaptopIcon,
+  MapPin,
+  Phone,
+  Lock,
+  Verified,
+} from 'lucide-react';
 import { db } from '../lib/db';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabaseClient';
 
 export default function ProfilePage() {
   const { t, profile } = useTranslation();
   const { user } = useAuth();
   const [fullName, setFullName] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [location, setLocation] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (profile && !isInitialized) {
       setFullName(profile.full_name || '');
+      setDisplayName(profile.display_name || '');
+      setPhoneNumber(profile.phone_number || '');
+      setLocation(profile.location || '');
       setIsInitialized(true);
     }
   }, [profile, isInitialized]);
+
+  // Calculate Profile Strength (basic logic)
+  const fields = [fullName, profile?.avatar_url, phoneNumber, location, displayName, user?.email];
+  const strength = Math.round((fields.filter(Boolean).length / fields.length) * 100);
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -26,11 +53,30 @@ export default function ProfilePage() {
         ...profile,
         id: user.id,
         full_name: fullName,
+        display_name: displayName,
+        phone_number: phoneNumber,
+        location: location,
         synced_at: null
       });
       toast.success('Profile updated successfully!');
     } catch (err) {
       toast.error('Failed to update profile.');
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success('Password updated successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
@@ -57,83 +103,195 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{t('userProfile')}</h2>
-        <p className="text-slate-500 dark:text-slate-400">{t('manageAccount')}</p>
-      </div>
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-5xl mx-auto space-y-12">
+      {/* Header Section */}
+      <header>
+        <h1 className="text-5xl font-extrabold text-indigo-900 dark:text-white tracking-tighter mb-2 font-headline">
+          {t('profileManagement') || 'Profile Management'}
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400 font-medium">
+          Update your professional identity and security settings at the personal saving tracker.
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left Column: Avatar & Quick Info */}
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm text-center">
-            <div className="relative w-24 h-24 mx-auto mb-4">
-              <div className="w-full h-full bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Avatar & Summary (4/12) */}
+        <aside className="lg:col-span-4 space-y-8">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 flex flex-col items-center text-center border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="relative mb-6">
+              <div className="h-32 w-32 rounded-full ring-4 ring-indigo-100 dark:ring-indigo-900/50 p-1">
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full rounded-full object-cover shadow-inner" />
+                  <img src={profile.avatar_url} alt="Profile" className="h-full w-full rounded-full object-cover" />
                 ) : (
-                  <User size={40} />
+                  <div className="w-full h-full bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                    <User size={48} />
+                  </div>
                 )}
               </div>
               <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full text-slate-600 dark:text-slate-300 hover:text-blue-600 transition shadow-sm"
+                className="absolute bottom-0 right-0 bg-emerald-600 text-white p-2.5 rounded-full shadow-lg border-4 border-white dark:border-slate-800 transition-transform hover:scale-110 active:scale-95"
               >
-                <Camera size={14} />
+                <Camera size={16} />
               </button>
               <input 
                 type="file" 
                 ref={fileInputRef} 
                 onChange={handleImageChange} 
                 className="hidden" 
-                accept="image/*" 
+                accept="image/*"
               />
             </div>
-            <h3 className="font-bold text-slate-800 dark:text-white text-lg">
-              {profile?.full_name || user?.email?.split('@')[0]}
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white font-headline">
+              {fullName || user?.email?.split('@')[0]}
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm italic">{t('authenticatedMember')}</p>
-          </div>
-        </div>
-
-        {/* Right Column: Forms */}
-        <div className="md:col-span-2 space-y-6">
-          {/* Personal Details Form */}
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-50 dark:border-slate-700">
-              <Mail size={18} className="text-blue-600 dark:text-blue-400" />
-              <h4 className="font-semibold text-slate-700 dark:text-slate-200">{t('personalDetails')}</h4>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">{t('fullName')}</label>
-                <input 
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-blue-500" 
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder={user?.user_metadata?.firstName ? `${user.user_metadata.firstName} ${user.user_metadata.lastName}` : 'Enter your name'}
-                />
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('privateWealthClient') || 'Private Wealth Client'}</p>
+            
+            <div className="w-full space-y-3 pt-6 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                <span className="text-slate-400">{t('profileStrength')}</span>
+                <span className="text-emerald-600 dark:text-emerald-400">{strength}%</span>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">{t('emailAddress')}</label>
-                <input className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 dark:text-slate-400 rounded-lg outline-none" readOnly value={user?.email} />
+              <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000" style={{ width: `${strength}%` }}></div>
               </div>
             </div>
-            <button onClick={handleUpdateProfile} className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">{t('updateProfile')}</button>
           </div>
 
-          {/* Security Form */}
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-50 dark:border-slate-700">
-              <ShieldCheck size={18} className="text-blue-600 dark:text-blue-400" />
-              <h4 className="font-semibold text-slate-700 dark:text-slate-200">{t('securityPassword')}</h4>
-            </div>
+          <div className="bg-indigo-600 dark:bg-indigo-700 p-8 rounded-2xl text-white shadow-xl shadow-indigo-900/10 relative overflow-hidden">
+            <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-3xl"></div>
+            <h4 className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-60 mb-2">{t('memberSince')}</h4>
+            <p className="text-2xl font-bold mb-8 font-headline">October 2022</p>
             <div className="space-y-4">
-              <input type="password" placeholder={t('currentPassword')} className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
-              <input type="password" placeholder={t('newPassword')} className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+              <div className="flex items-center gap-3">
+                <Verified size={18} className="text-indigo-200" />
+                <span className="text-sm font-medium">{t('kycVerified')}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Sparkles size={18} className="text-indigo-200" />
+                <span className="text-sm font-medium">{t('premiumTierBenefits')}</span>
+              </div>
             </div>
-            <button className="mt-6 border border-blue-600 text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition">{t('changePassword')}</button>
           </div>
+        </aside>
+
+        {/* Right Column: Forms (8/12) */}
+        <div className="lg:col-span-8 space-y-8">
+          {/* Personal Details Card */}
+          <section className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight font-headline">{t('personalDetails')}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('identityEncrypted') || 'Your identity information is encrypted and secure.'}</p>
+              </div>
+              <BadgeCheck size={32} className="text-indigo-600/30" />
+            </div>
+            
+            <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); handleUpdateProfile(); }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('fullName')}</label>
+                  <input 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-5 py-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('displayName')}</label>
+                  <input 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-5 py-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('emailAddress')}</label>
+                <div className="relative">
+                  <input 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-5 py-4 text-slate-400 font-bold outline-none cursor-not-allowed" 
+                    readOnly 
+                    value={user?.email} 
+                  />
+                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-emerald-600 font-black text-[10px] uppercase flex items-center gap-1">
+                    <CheckCircle2 size={14} /> {t('verified')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('phoneNumber')}</label>
+                  <input 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-5 py-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('location')}</label>
+                  <input 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-5 py-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="City, Country"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <button className="bg-indigo-600 text-white px-10 py-4 rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all active:scale-95">
+                  {t('saveChanges')}
+                </button>
+              </div>
+            </form>
+          </section>
+
+          {/* Security & Password Card */}
+          <section className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight font-headline">{t('securityPassword')}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('manageCredentials') || 'Manage your credentials and authentication methods.'}</p>
+              </div>
+              <ShieldCheck size={32} className="text-indigo-600/30" />
+            </div>
+            
+            <div className="space-y-8">
+              <div className="space-y-6 p-6 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('newPassword')}</label>
+                    <input 
+                      type="password"
+                      className="w-full bg-white dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('confirmPassword')}</label>
+                    <input 
+                      type="password"
+                      className="w-full bg-white dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <button 
+                  onClick={handleUpdatePassword}
+                  className="w-full py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all shadow-md active:scale-95 text-sm"
+                >
+                  {t('updatePassword')}
+                </button>
+              </div>
+
+            </div>
+          </section>
         </div>
       </div>
     </div>
