@@ -17,14 +17,45 @@ import {
   ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
 
 export default function VoiceRecords() {
   const { t, profile } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
+
+  const processWithAI = async (blob) => {
+    setIsProcessing(true);
+    const tid = toast.loading(t('processingAI'));
+    
+    try {
+      const base64Audio = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      const { data, error } = await supabase.functions.invoke('openai_api', {
+        body: { audio: base64Audio }
+      });
+
+      if (error) throw error;
+      
+      toast.success(t('parseSuccess'), { id: tid });
+      navigate('/expenses', { state: { prefill: data } });
+    } catch (err) {
+      console.error('[VoiceRecord] AI Processing Error:', err);
+      toast.error(t('parseError'), { id: tid });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const recordings = useLiveQuery(() => 
     user ? db.voiceRecords.where('user_id').equals(user.id).filter(item => !item._deleted).toArray() : []
@@ -44,6 +75,8 @@ export default function VoiceRecords() {
 
       mediaRecorderRef.current.onstop = async () => {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        await processWithAI(audioBlob);
+        
         await db.voiceRecords.add({
           id: crypto.randomUUID(),
           user_id: user.id,

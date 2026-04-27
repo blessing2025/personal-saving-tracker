@@ -50,7 +50,9 @@ export default function GoalPage() {
     }
   };
 
-  const handleContribution = async (id, currentAmount) => {
+  const handleContribution = async (goal) => {
+    const id = goal.id;
+    const currentAmount = goal.saved_amount;
     const amount = contributionInputs[id];
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -58,9 +60,15 @@ export default function GoalPage() {
       return;
     }
 
+    const newSavedAmount = (currentAmount || 0) + parsedAmount;
+    if (newSavedAmount > goal.target_amount) {
+      toast.error(t('contributionExceedsTarget'));
+      return;
+    }
+
     try {
       await db.goals.update(id, {
-        saved_amount: (currentAmount || 0) + parsedAmount,
+        saved_amount: newSavedAmount,
         synced_at: null
       });
 
@@ -174,7 +182,7 @@ export default function GoalPage() {
           </form>
           <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700 text-center">
             <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 inline-block border border-emerald-100 dark:border-emerald-800">
-              <p className="text-emerald-700 dark:text-emerald-400 text-sm font-semibold">Tip: Automatic transfers increase success rates by 40%</p>
+              <p className="text-emerald-700 dark:text-emerald-400 text-sm font-semibold">{t('savingsTip')}</p>
             </div>
           </div>
         </section>
@@ -222,7 +230,7 @@ export default function GoalPage() {
                       className="flex-1 bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 outline-none"
                     />
                     <button 
-                      onClick={() => handleContribution(goal.id, goal.saved_amount)}
+                      onClick={() => handleContribution(goal)}
                       className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-indigo-700 transition active:scale-95"
                     >
                       {t('add')}
@@ -236,12 +244,12 @@ export default function GoalPage() {
           {/* Goal Insights Banner */}
           <div className="bg-indigo-600 dark:bg-indigo-700 text-white rounded-2xl overflow-hidden relative p-10 flex flex-col md:flex-row items-center gap-10 shadow-xl shadow-indigo-900/10">
             <div className="relative z-10 md:w-2/3">
-              <span className="text-xs font-bold uppercase tracking-[0.2em] opacity-80 mb-4 block">Fiscal Momentum</span>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] opacity-80 mb-4 block">{t('fiscalMomentum')}</span>
               <h2 className="text-4xl font-extrabold tracking-tight mb-4 font-headline leading-tight">
-                You're on track to reach all goals by late 2025.
+                {t('goalInsightTitle')}
               </h2>
               <p className="text-indigo-100 text-lg font-light">
-                Based on your current average monthly contribution, we recommend adjusting your deadlines to optimize for the fiscal year-end.
+                {t('goalInsightMsg')}
               </p>
             </div>
             <div className="relative z-10 md:w-1/3 flex justify-center">
