@@ -288,7 +288,6 @@ export default function Reports() {
               <thead>
                 <tr className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] font-bold">
                   <th className="pb-6">{t('date') || 'Date'}</th>
-                  <th className="pb-6">{t('category') || 'Category'}</th>
                   <th className="pb-6">{t('category')}</th>
                   <th className="pb-6 text-right">{t('amount')}</th>
                   <th className="pb-6 text-right">{t('status')}</th>
@@ -300,7 +299,6 @@ export default function Reports() {
                     <td className="py-5 font-medium text-slate-500 dark:text-slate-400">
                       {formatDate(act.date)}
                     </td>
-                    <td className="py-5 font-bold text-indigo-900 dark:text-slate-200">{act.category || 'General'}</td>
                     <td className="py-5">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
                         act.type === 'income' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30' : 'bg-rose-50 text-rose-600 dark:bg-rose-900/30'

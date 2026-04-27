@@ -86,11 +86,12 @@ export const syncData = async (userId) => {
           message: supabaseError.message,
           details: supabaseError.details,
           hint: supabaseError.hint,
-          payload: upsertPayload[0]
+          payload: upsertPayload
         });
       }
 
-      if (!supabaseError && supabaseData) {
+      // Only update local DB if there was no error and we have confirmation data
+      if (!supabaseError && supabaseData && supabaseData.length > 0) {
         // Mark as synced in local DB
         const now = new Date().toISOString();
         const updatePromises = itemsToUpsert.map(item => 
