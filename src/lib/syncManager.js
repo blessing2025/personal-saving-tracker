@@ -66,18 +66,19 @@ export const syncData = async (userId) => {
       const itemsToUpsert = userItems.filter(item => !item._deleted);
       if (itemsToUpsert.length === 0) continue;
 
-      const payload = itemsToUpsert.map(({ synced_at, _deleted, ...item }) => {
-          const payload = { ...item };
-          if (table === 'profiles') {
-            payload.id = userId; // Force ID to match current authenticated user
-          } else {
-            payload.user_id = userId;
-          }
-          return payload;
+       const upsertPayload = itemsToUpsert.map(({ synced_at, _deleted, ...item }) => {
+        const record = { ...item };
+        if (table === 'profiles') {
+          record.id = userId; // Force ID to match current authenticated user
+        } else {
+          record.user_id = userId;
+        }
+        return record;
       });
+
       const { data: supabaseData, error: supabaseError } = await supabase
         .from(table)
-        .upsert(payload, { onConflict: 'id' })
+        .upsert(upsertPayload, { onConflict: 'id' })
         .select();
 
       if (supabaseError) {
@@ -85,14 +86,14 @@ export const syncData = async (userId) => {
           message: supabaseError.message,
           details: supabaseError.details,
           hint: supabaseError.hint,
-          payload: itemsToPush[0] // Log the first item to see structure
+          payload: upsertPayload[0]
         });
       }
 
       if (!supabaseError && supabaseData) {
         // Mark as synced in local DB
         const now = new Date().toISOString();
-        const updatePromises = itemsToPush.map(item => 
+        const updatePromises = itemsToUpsert.map(item => 
           db[table].update(item.id, { synced_at: now })
         );
         await Promise.all(updatePromises);

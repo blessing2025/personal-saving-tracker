@@ -1,5 +1,4 @@
-// c:\Users\IUC\Desktop\personal-saving-tracker\supabase\functions\send-notification\index.ts
-/// <reference lib="deno.ns" />
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');

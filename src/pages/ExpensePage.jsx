@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useForm } from 'react-hook-form';
 import { useNumberFormatter } from 'react-aria';
@@ -26,7 +27,17 @@ import { Link } from 'react-router-dom';
 export default function ExpensePage() {
   const { t, profile, formatDate } = useTranslation();
   const { user } = useAuth();
-  const { register, handleSubmit, reset } = useForm();
+  const location = useLocation();
+  const { register, handleSubmit, reset, setValue } = useForm();
+
+  // Effect to handle pre-filling from Voice Records
+  useEffect(() => {
+    if (location.state?.prefill) {
+      const { amount, category } = location.state.prefill;
+      if (amount) setValue('amount', amount);
+      if (category) setValue('category', category);
+    }
+  }, [location.state, setValue]);
 
   const categoryIcons = {
     Rent: <CreditCard size={18} />,

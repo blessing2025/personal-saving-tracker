@@ -217,7 +217,7 @@ export default function Reports() {
               <span className="text-sm text-indigo-200 font-bold">x</span>
             </div>
             <p className="text-xs text-indigo-100 leading-relaxed mb-8 max-w-[180px]">
-              Your current liquidity position is exceptionally strong, exceeding targets.
+              {t('liquidityPositionMsg')}
             </p>
             <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
               <div className="h-full bg-emerald-400 rounded-full" style={{ width: '72%' }}></div>
