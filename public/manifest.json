@@ -11,31 +11,7 @@
   "icons": [
     {
       "src": "/logo.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "152x152",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
@@ -43,13 +19,7 @@
       "src": "/logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable"
     },
     {
       "src": "/logo.png",
@@ -66,14 +36,14 @@
   ],
   "screenshots": [
     {
-      "src": "https://via.placeholder.com/1280x720.png?text=PST+System+Desktop",
+      "src": "https://via.placeholder.com/1280x720.png?text=PST+System+Desktop+Dashboard",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Desktop view of the dashboard"
     },
     {
-      "src": "https://via.placeholder.com/720x1280.png?text=PST+System+Mobile",
+      "src": "https://via.placeholder.com/720x1280.png?text=PST+System+Mobile+Dashboard",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow",
