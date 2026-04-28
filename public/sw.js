@@ -1,11 +1,11 @@
-const CACHE_NAME = 'pst-v4'; // Increment cache version to force update
+const CACHE_NAME = 'pst-v5'; // Increment cache version to force update
 
 const ASSETS_TO_PRECACHE = [
   '/',
-  '/manifest.json',
-  '/favicon.svg'
+  '/index.html', // Crucial for SPA entry point
+  '/manifest.json', // Manifest for PWA
+  '/logo.png' // Your updated logo
 ];
-
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -57,27 +57,31 @@ self.addEventListener('fetch', (event) => {
   }
 
   // For all other GET requests (static assets: JS, CSS, images, etc.)
-  // Cache-first, then network, and update cache
+  // Strategy: Cache-first, then network, with a fallback to index.html if network fails
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse; // Serve from cache if available
       }
 
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-          return networkResponse; // Return invalid responses as is
-        }
-        const responseToCache = networkResponse.clone(); // Clone response for caching
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+      // Try to fetch from the network
+      return fetch(event.request)
+        .then((networkResponse) => {
+          // If network response is valid, cache it and return
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+            return networkResponse;
+          }
+          return networkResponse; // Return invalid network responses as is
+        })
+        .catch(() => {
+          // If network fetch fails (offline), fallback to index.html for any GET request
+          console.warn('[Service Worker] Network fetch failed for:', event.request.url, 'Falling back to index.html for SPA.');
+          return caches.match('/index.html');
         });
-        return networkResponse; // Return network response
-      }).catch(() => {
-        // If network fails for a non-navigation request, there's no generic fallback for JS/CSS.
-        // The browser will likely show its default error.
-        console.warn('[Service Worker] Fetch failed for:', event.request.url);
-        return new Response(null, { status: 503, statusText: 'Service Unavailable' });
       });
     })
   );
