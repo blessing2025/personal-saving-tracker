@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v6'; // Increment cache version to force update
+const CACHE_NAME = 'pst-v7'; // Increment cache version to force update
 
 const ASSETS_TO_PRECACHE = [
   '/',
@@ -48,9 +48,9 @@ self.addEventListener('fetch', (event) => {
   // For navigation requests (e.g., direct URL entry, refresh on a sub-route)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match(event.request).then(cachedResponse => {
+      caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
         return cachedResponse || fetch(event.request).catch(() => {
-          return caches.match('/index.html'); // Always serve index.html for SPA routes if offline
+          return caches.match('/', { ignoreSearch: true }); // Fallback to root shell if offline
         });
       })
     );
@@ -59,7 +59,7 @@ self.addEventListener('fetch', (event) => {
 
   // For all other GET requests (static assets: JS, CSS, images, etc.) 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
+    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse; // Serve from cache if available
       }
@@ -76,7 +76,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           if (event.request.destination === 'document' || event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches.match('/', { ignoreSearch: true });
           }
           return new Response('Offline content not available', { status: 503 });
         });
