@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from '../contexts/TranslationContext';
 import { supabase } from '../lib/supabaseClient';
 
 export default function VoiceRecords() {
