@@ -1,5 +1,5 @@
-import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { I18nProvider } from 'react-aria';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -17,15 +17,48 @@ import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import VoiceRecords from './pages/VoiceRecords';
 import LoadingScreen from './components/common/LoadingScreen';
-import { Menu } from 'lucide-react';
+import { Menu, ShieldCheck, ArrowRight } from 'lucide-react';
 import { db } from './lib/db';
 import { useOfflineSync } from './hooks/useOfflineSync'; // Import the offline sync hook
 import { Toaster } from 'react-hot-toast';
 import { translations } from './lib/translations';
+import { TranslationContext, useTranslation } from './contexts/TranslationContext';
+
 // Helper to protect private routes
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
+};
+
+// New Public Landing Component
+const Landing = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="min-h-screen bg-[#f8f9fb] dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+      <div className="max-w-4xl w-full">
+        <div className="flex items-center justify-center gap-3 mb-8 animate-in fade-in zoom-in duration-700">
+          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
+            <ShieldCheck size={32} />
+          </div>
+          <span className="text-4xl font-black text-indigo-900 dark:text-white tracking-tighter">PST System</span>
+        </div>
+        <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-6 font-headline">
+          Professional Financial <span className="text-indigo-600">Tracking</span>
+        </h1>
+        <p className="text-xl text-slate-500 dark:text-slate-400 mb-10 max-w-2xl mx-auto font-medium">
+          {t('startJourney')} — A professional-grade ledger for your personal wealth management.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <Link to="/login" className="px-10 py-5 bg-indigo-600 text-white rounded-full font-bold text-lg shadow-xl hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2">
+            {t('signIn')} <ArrowRight size={20} />
+          </Link>
+          <Link to="/register" className="px-10 py-5 bg-white dark:bg-slate-900 text-indigo-600 dark:text-white border border-slate-200 dark:border-slate-800 rounded-full font-bold text-lg hover:bg-slate-50 transition-all">
+            {t('registerNow')}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // Shared layout for all authenticated pages to avoid repetitive JSX
@@ -49,9 +82,6 @@ const AppLayout = () => {
     </div>
   );
 };
-
-const TranslationContext = createContext();
-export const useTranslation = () => useContext(TranslationContext);
 
 // This internal component ensures hooks that use AuthContext are inside the Provider
 const AppContent = () => {
@@ -121,13 +151,14 @@ const AppContent = () => {
         <Toaster position="top-right" />
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Private Routes wrapped in both Authentication and the App Shell Layout */}
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/income" element={<IncomePage />} />
             <Route path="/expenses" element={<ExpensePage />} />
             <Route path="/goals" element={<GoalPage />} />

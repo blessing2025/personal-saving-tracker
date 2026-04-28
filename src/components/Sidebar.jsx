@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useTranslation } from '../App';
+import { useTranslation } from '../contexts/TranslationContext';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -21,7 +21,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const { signOut } = useAuth();
 
   const navItems = [
-    { to: '/', icon: <LayoutDashboard size={20} />, label: t('dashboard') },
+    { to: '/dashboard', icon: <LayoutDashboard size={20} />, label: t('dashboard') },
     { to: '/income', icon: <TrendingUp size={20} />, label: t('income') },
     { to: '/expenses', icon: <Receipt size={20} />, label: t('expenses') },
     { to: '/goals', icon: <Target size={20} />, label: t('goals') },

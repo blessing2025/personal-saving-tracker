@@ -4,9 +4,9 @@ import { useNumberFormatter } from 'react-aria';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
-import { db } from '../lib/db';
+import { db } from '../lib/db'; // This line is not the target
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../App';
+import { useTranslation } from '../contexts/TranslationContext';
 import { 
   BarChart, 
   Bar, 

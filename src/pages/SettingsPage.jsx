@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../App';
+import { useTranslation } from '../contexts/TranslationContext';
 import { syncData, pullData } from '../lib/syncManager';
 import toast from 'react-hot-toast';
 

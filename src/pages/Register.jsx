@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../App';
+import { useTranslation } from '../contexts/TranslationContext';
 import toast from 'react-hot-toast';
 import { User, Mail, Lock, ShieldPlus, ArrowRight, Eye, EyeOff } from 'lucide-react';
 

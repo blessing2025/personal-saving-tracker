@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useNumberFormatter } from 'react-aria';
 import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../App';
+import { useTranslation } from '../contexts/TranslationContext';
 import toast from 'react-hot-toast';
 import { 
   Trash2, 

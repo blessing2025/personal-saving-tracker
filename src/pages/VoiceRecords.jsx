@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../App';
 import { 
   Mic, 
   Square, 

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useNumberFormatter } from 'react-aria';
 import { db } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from '../App';
+import { useTranslation } from '../contexts/TranslationContext';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabaseClient'; // Import supabase client
 import { Trash2, PlusCircle, Filter, Download, ArrowRight, Wallet, TrendingUp } from 'lucide-react';

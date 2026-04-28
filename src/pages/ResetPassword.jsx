@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { useTranslation } from '../App';
+import { useTranslation } from '../contexts/TranslationContext';
 import { Mail, ArrowRight, ShieldCheck, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 

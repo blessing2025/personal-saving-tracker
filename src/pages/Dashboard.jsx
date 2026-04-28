@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
-import { useTranslation } from '../App';
+import { useTranslation } from '../contexts/TranslationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TrendingUp, Wallet, Receipt, Plus, Calendar, MoreHorizontal, ShoppingBag, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
