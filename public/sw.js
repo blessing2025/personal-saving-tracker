@@ -1,11 +1,9 @@
-const CACHE_NAME = 'pst-v3'; // Increment cache version to force update
+const CACHE_NAME = 'pst-v4'; // Increment cache version to force update
 
 const ASSETS_TO_PRECACHE = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/favicon.svg'
-  // Add any other critical static assets that are not hashed, e.g., fonts, static images
 ];
 
 self.addEventListener('install', (event) => {
