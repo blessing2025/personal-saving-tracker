@@ -83,6 +83,11 @@ export default function ExpensePage() {
   
   const onSubmit = async (data) => {
     try {
+      if (parseFloat(data.amount) <= 0) {
+        toast.error(t('validAmount'));
+        return;
+      }
+
       await db.expenses.add({
         id: crypto.randomUUID(),
         user_id: user.id,

@@ -33,6 +33,11 @@ export default function GoalPage() {
 
   const onSubmit = async (data) => {
     try {
+      if (parseFloat(data.target_amount) <= 0) {
+        toast.error(t('validAmount'));
+        return;
+      }
+
       await db.goals.add({
         id: crypto.randomUUID(),
         user_id: user.id,
@@ -60,11 +65,14 @@ export default function GoalPage() {
       return;
     }
 
-    const newSavedAmount = (currentAmount || 0) + parsedAmount;
-    if (newSavedAmount > goal.target_amount) {
-      toast.error(t('contributionExceedsTarget'));
+    const remaining = goal.target_amount - (currentAmount || 0);
+
+    if (parsedAmount > remaining) {
+      toast.error(t('amountExceedsGoal'));
       return;
     }
+
+    const newSavedAmount = (currentAmount || 0) + parsedAmount;
 
     try {
       await db.goals.update(id, {
@@ -74,15 +82,24 @@ export default function GoalPage() {
 
       // Check if goal is completed and send alert if preference is enabled
       const updatedGoal = await db.goals.get(id);
-      if (updatedGoal && updatedGoal.saved_amount >= updatedGoal.target_amount && profile?.goal_alerts && user?.email) {
-        toast.success(`🎉 ${t('goalCompleted')}!`); // Use a more celebratory toast
-        await supabase.functions.invoke('send-notification', {
+      const isAlertEnabled = profile?.goal_alerts ?? true;
+      if (updatedGoal && updatedGoal.saved_amount >= updatedGoal.target_amount && isAlertEnabled && user?.email) {
+        toast.success(`🎉 ${t('goalCompleted')}!`);
+        
+        // Fire and forget the notification so it doesn't block the UI or show false errors
+        supabase.functions.invoke('send-notification', {
           body: {
             type: 'goal_completed',
             recipientEmail: user.email,
-            payload: { goalName: updatedGoal.name, savedAmount: updatedGoal.saved_amount, targetAmount: updatedGoal.target_amount, currency: profile?.currency || 'USD' }
+            payload: { 
+              goalName: updatedGoal.name, 
+              savedAmount: updatedGoal.saved_amount, 
+              targetAmount: updatedGoal.target_amount, 
+              currency: profile?.currency || 'USD' 
+            }
           }
-        });
+        }).catch(err => console.error("Email notification failed:", err));
+
       } else {
         toast.success(t('contributionAdded'));
       }

@@ -4,13 +4,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
 import toast from 'react-hot-toast';
-import { User, Mail, Lock, ShieldPlus, ArrowRight } from 'lucide-react';
+import { User, Mail, Lock, ShieldPlus, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function Register() {
   const { t } = useTranslation();
   const { register, handleSubmit, formState: { errors } } = useForm();
   const { signUp } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const onSubmit = async (data) => {
@@ -89,11 +90,23 @@ export default function Register() {
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('password')}</label>
-            <input 
-              {...register('password', { required: true, minLength: 6 })} 
-              type="password" 
-              className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 px-5 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none" 
-            />
+            <div className="relative">
+              <input 
+                {...register('password', { required: true, minLength: 6 })} 
+                type={showPassword ? "text" : "password"} 
+                className={`w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 pl-5 pr-12 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none ${errors.password ? 'ring-2 ring-rose-500/50' : ''}`} 
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {errors.password?.type === 'minLength' && (
+              <p className="text-rose-500 text-[10px] font-bold uppercase ml-1 mt-1">{t('passwordTooShort')}</p>
+            )}
           </div>
           <button 
             disabled={loading}

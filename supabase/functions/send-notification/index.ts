@@ -27,11 +27,12 @@ Deno.serve(async (req) => {
     switch (type) {
       case 'income_added':
         subject = "New Income Recorded - Personal Saving Tracker";
+        const dateStr = payload.date ? new Date(payload.date).toLocaleDateString() : new Date().toLocaleDateString();
         html = `
           <h1>Income Confirmed</h1>
           <p>A new entry of <strong>${payload.amount} ${payload.currency}</strong> has been added to your ledger.</p>
-          <p>Category: ${payload.category}</p>
-          <p>Date: ${new Date(payload.date).toLocaleDateString()}</p>
+          <p>Category: ${payload.category || 'General'}</p>
+          <p>Date: ${dateStr}</p>
         `;
         break;
       
@@ -77,7 +78,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Personal Saving Tracker <onboarding@resend.dev>', // Update this with your verified domain
+        from: 'PST System <notifications@yourdomain.com>', // Replace with your verified domain
         to: [recipientEmail],
         subject,
         html,

@@ -32,25 +32,38 @@ export default function IncomePage() {
 
   const onSubmit = async (data) => {
     try {
+      const category = data.category || 'General';
+      const isEmailEnabled = profile?.email_inflow ?? true; // Default to true
+
       await db.incomes.add({
         id: crypto.randomUUID(),
         user_id: user.id,
         amount: parseFloat(data.amount),
-        category: data.category || 'General',
+        category: category,
         date: new Date().toISOString(),
         synced_at: null
       });
       
-      // Trigger email notification if preference is enabled
-      if (profile?.email_inflow && user?.email) {
-        await supabase.functions.invoke('send-notification', {
+      if (isEmailEnabled && user?.email) {
+        const { error: invokeError } = await supabase.functions.invoke('send-notification', {
           body: {
             type: 'income_added',
             recipientEmail: user.email,
-            payload: { amount: data.amount, category: data.category, date: new Date().toISOString(), currency: profile?.currency || 'USD' }
+            payload: { 
+              amount: data.amount, 
+              category: category, 
+              date: new Date().toISOString(), 
+              currency: profile?.currency || 'USD' 
+            }
           }
         });
-        toast.success(`${t('incomeRecorded')} — Confirmation sent to ${user.email}`);
+
+        if (invokeError) {
+          console.error("Notification trigger failed:", invokeError);
+          toast.success(t('incomeRecorded')); // Record anyway but notify log
+        } else {
+          toast.success(`${t('incomeRecorded')} — Confirmation sent to ${user.email}`);
+        }
       } else {
         toast.success(t('incomeRecorded'));
       }
@@ -141,7 +154,7 @@ export default function IncomePage() {
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{t('amount')}</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₦</span>
+                    
                     <input 
                       {...register('amount', { required: true })}
                       className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl p-4 pl-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body text-lg" 

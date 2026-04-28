@@ -15,6 +15,8 @@ import {
   Phone,
   Lock,
   Verified,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { db } from '../lib/db';
 import toast from 'react-hot-toast';
@@ -25,10 +27,14 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [fullName, setFullName] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [location, setLocation] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -65,14 +71,33 @@ export default function ProfilePage() {
   };
 
   const handleUpdatePassword = async () => {
+    if (!currentPassword) {
+      toast.error(t('currentPasswordRequired'));
+      return;
+    }
     if (newPassword !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
+    if (newPassword.length < 6) {
+      toast.error(t('passwordTooShort'));
+      return;
+    }
+
     try {
+      // Verify current password by attempting a re-authentication
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (verifyError) throw new Error(t('invalidCurrentPassword'));
+
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
+
       toast.success('Password updated successfully!');
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
@@ -262,24 +287,60 @@ export default function ProfilePage() {
             
             <div className="space-y-8">
               <div className="space-y-6 p-6 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('currentPassword')}</label>
+                  <div className="relative">
+                    <input 
+                      type={showCurrentPassword ? "text" : "password"}
+                      className="w-full bg-white dark:bg-slate-800 border-none rounded-xl px-4 py-3 pr-12 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                    >
+                      {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('newPassword')}</label>
-                    <input 
-                      type="password"
-                      className="w-full bg-white dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showNewPassword ? "text" : "password"}
+                        className="w-full bg-white dark:bg-slate-800 border-none rounded-xl px-4 py-3 pr-12 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                      >
+                        {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('confirmPassword')}</label>
-                    <input 
-                      type="password"
-                      className="w-full bg-white dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="w-full bg-white dark:bg-slate-800 border-none rounded-xl px-4 py-3 pr-12 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold outline-none" 
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <button 

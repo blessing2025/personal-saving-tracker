@@ -3,16 +3,45 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../App';
-import { Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { syncData, pullData } from '../lib/syncManager';
-
+import { useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 export default function Login() {
   const { t } = useTranslation();
   const { register, handleSubmit, formState: { errors } } = useForm();
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+ // Effect to handle password reset redirect
+  useEffect(() => {
+    const { hash } = window.location;
+    const params = new URLSearchParams(hash.substring(1)); // Parse hash fragment
+    const type = params.get('type');
+    const accessToken = params.get('access_token');
+
+    if (type === 'recovery' && accessToken) {
+      // Clear the hash from the URL to prevent re-processing on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Supabase's getSession will automatically pick up the access_token from the hash
+      // and update the session. We then navigate the user to the profile page
+      // where they can update their password.
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          toast.success(t('passwordResetReady'));
+          navigate('/profile'); // Redirect to profile page to set new password
+        } else {
+          toast.error(t('passwordResetFailed'));
+        }
+      }).catch(err => {
+        console.error("Error getting session after password reset:", err);
+        toast.error(t('passwordResetFailed'));
+      });
+    }
+  }, [navigate, t]); // Dependencies: navigate and t
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -20,7 +49,7 @@ export default function Login() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success('Logged in successfully!');
+      toast.success(t('welcomeBack'));
       if (authData?.user?.id) {
         await syncData(authData.user.id); // Push local deletions first
         await pullData(authData.user.id); // Then pull fresh state
@@ -56,23 +85,30 @@ export default function Login() {
                 {...register('email', { required: true })}
                 type="email" 
                 placeholder="name@atelier.com"
-                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-5 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+              className={`w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-5 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none ${errors.email ? 'ring-2 ring-rose-500/50' : ''}`}
               />
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between items-center ml-1">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('password')}</label>
-              <Link to="/reset-password" name="forgot-password" size="sm" className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline">Forgot?</Link>
+            <Link to="/reset-password" name="forgot-password" size="sm" className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline">{t('forgotPassword')}</Link>
             </div>
             <div className="relative">
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
                 {...register('password', { required: true })}
-                type="password" 
+                type={showPassword ? "text" : "password"} 
                 placeholder="••••••••"
-                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-5 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+              className={`w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-5 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none ${errors.password ? 'ring-2 ring-rose-500/50' : ''}`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
           <button 

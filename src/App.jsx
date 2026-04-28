@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import { useLiveQuery } from 'dexie-react-hooks';
 import { I18nProvider } from 'react-aria';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Navbar from './components/layout/Navbar';
+import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Register from './pages/Register'; // Import Register
 import Login from './pages/Login';
@@ -17,6 +17,7 @@ import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import VoiceRecords from './pages/VoiceRecords';
 import LoadingScreen from './components/common/LoadingScreen';
+import { Menu } from 'lucide-react';
 import { db } from './lib/db';
 import { useOfflineSync } from './hooks/useOfflineSync'; // Import the offline sync hook
 import { Toaster } from 'react-hot-toast';
@@ -28,14 +29,26 @@ const ProtectedRoute = ({ children }) => {
 };
 
 // Shared layout for all authenticated pages to avoid repetitive JSX
-const AppLayout = () => (
-  <>
-    <Navbar />
-    <main className="container mx-auto px-4 py-8">
-      <Outlet />
-    </main>
-  </>
-);
+const AppLayout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <header className="h-16 flex items-center px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 -ml-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all"
+        >
+          <Menu size={24} />
+        </button>
+      </header>
+      <main className="flex-1 p-6 md:p-10">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
 
 const TranslationContext = createContext();
 export const useTranslation = () => useContext(TranslationContext);

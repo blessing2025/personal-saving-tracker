@@ -11,6 +11,14 @@ Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  if (!OPENAI_API_KEY) {
+    console.error("Missing OPENAI_API_KEY environment variable");
+    return new Response(JSON.stringify({ error: "Server configuration error: Missing API Key" }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const { audio } = await req.json(); // Base64 audio from frontend
     
@@ -26,9 +34,14 @@ Deno.serve(async (req) => {
       headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
       body: formData
     });
-    const { text: transcript } = await transcriptionRes.json();
+    
+    if (!transcriptionRes.ok) {
+      const err = await transcriptionRes.text();
+      throw new Error(`Whisper API error: ${err}`);
+    }
 
-    // 3. Parse with GPT-4o-mini (Returning ONLY amount and category)
+    const { text: transcript } = await transcriptionRes.json();
+    
     const completionRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -48,15 +61,22 @@ Deno.serve(async (req) => {
       })
     });
 
+    if (!completionRes.ok) {
+      const err = await completionRes.text();
+      throw new Error(`GPT API error: ${err}`);
+    }
+
     const completionData = await completionRes.json();
     const result = JSON.parse(completionData.choices[0].message.content);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (error) {
+    console.error("[Edge Function Error]:", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
