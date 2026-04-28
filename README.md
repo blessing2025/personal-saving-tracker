@@ -14,7 +14,7 @@ A high-end, editorial-style financial management application designed for precis
 ## 🛠️ Tech Stack
 - **Framework:** React 19 + Vite
 - **Styling:** Tailwind CSS 4 (OKLCH Color Support)
-- **Database:** IndexedDB (Dexie) + Supabase
+- **Database:** IndexedDB (Dexie) + Supabase 
 - **Icons:** Lucide React
 - **Charts:** Recharts
 

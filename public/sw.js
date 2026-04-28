@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v5'; // Increment cache version to force update
+const CACHE_NAME = 'pst-v6'; // Increment cache version to force update
 
 const ASSETS_TO_PRECACHE = [
   '/',
@@ -6,6 +6,7 @@ const ASSETS_TO_PRECACHE = [
   '/manifest.json', // Manifest for PWA
   '/logo.png' // Your updated logo
 ];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -56,33 +57,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For all other GET requests (static assets: JS, CSS, images, etc.)
-  // Strategy: Cache-first, then network, with a fallback to index.html if network fails
+  // For all other GET requests (static assets: JS, CSS, images, etc.) 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse; // Serve from cache if available
       }
 
-      // Try to fetch from the network
       return fetch(event.request)
         .then((networkResponse) => {
-          // If network response is valid, cache it and return
           if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, responseToCache);
             });
-            return networkResponse;
           }
-          return networkResponse; // Return invalid network responses as is
+          return networkResponse;
         })
         .catch(() => {
-          // If network fetch fails (offline), fallback to index.html for any GET request
-          console.warn('[Service Worker] Network fetch failed for:', event.request.url, 'Falling back to index.html for SPA.');
-          return caches.match('/index.html');
+          if (event.request.destination === 'document' || event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+          return new Response('Offline content not available', { status: 503 });
         });
-      });
     })
   );
 });

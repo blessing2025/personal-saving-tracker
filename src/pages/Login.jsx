@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../contexts/TranslationContext';
-import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Wallet, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { syncData, pullData } from '../lib/syncManager';
 import { useEffect } from 'react';
@@ -68,7 +68,7 @@ export default function Login() {
         <div className="mb-10">
           <div className="flex items-center gap-2 mb-8">
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-              <ShieldCheck size={24} />
+              <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" />
             </div>
             <span className="text-xl font-black text-indigo-900 dark:text-white tracking-tighter">Personal Saving Tracker</span>
           </div>
@@ -84,7 +84,7 @@ export default function Login() {
               <input 
                 {...register('email', { required: true })}
                 type="email" 
-                placeholder="name@atelier.com"
+                placeholder="name@atelier.com" 
               className={`w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-5 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none ${errors.email ? 'ring-2 ring-rose-500/50' : ''}`}
               />
             </div>
@@ -93,7 +93,7 @@ export default function Login() {
             <div className="flex justify-between items-center ml-1">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('password')}</label>
             <Link to="/reset-password" name="forgot-password" size="sm" className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline">{t('forgotPassword')}</Link>
-            </div>
+            </div> 
             <div className="relative">
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
@@ -112,7 +112,7 @@ export default function Login() {
             </div>
           </div>
           <button 
-            disabled={loading}
+            disabled={loading} 
             type="submit" 
             className="w-full bg-indigo-600 text-white font-bold py-4 rounded-full hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 dark:shadow-none active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 group"
           >
@@ -125,7 +125,7 @@ export default function Login() {
         </form>
 
         <p className="text-center mt-8 text-sm text-slate-600">
-          {t('noAccount')} <Link to="/register" className="text-blue-600 font-bold hover:underline">{t('registerNow')}</Link>
+          {t('noAccount')} <Link to="/register" className="text-indigo-600 font-bold hover:underline">{t('registerNow')}</Link>
         </p>
       </div>
     </div>

@@ -34,10 +34,10 @@ export default function Sidebar({ isOpen, onClose }) {
     <>
       {/* Backdrop: Darkens the screen and closes sidebar when clicked outside */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 transition-opacity" 
           onClick={onClose}
-        />
+        /> 
       )}
 
       <aside className={`fixed left-0 top-0 h-screen w-72 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col z-[60] transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -45,10 +45,10 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 dark:shadow-none">
-                <Wallet size={24} />
+                <img src="/logo.png" alt="Logo" className="w-6 h-6 object-contain" /> 
               </div>
-              <span className="text-xl font-black text-indigo-900 dark:text-white tracking-tighter">PST System</span>
-            </div>
+              <span className="text-xl font-black text-indigo-900 dark:text-white tracking-tighter">PST System</span> 
+            </div> 
             <button onClick={onClose} className="p-2 text-slate-400 hover:text-rose-500 transition-colors">
               <X size={20} />
             </button>
@@ -61,9 +61,9 @@ export default function Sidebar({ isOpen, onClose }) {
                 to={item.to}
                 onClick={onClose}
                 className={({ isActive }) => `
-                  flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all
-                  ${isActive 
-                    ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' 
+                  flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all 
+                  ${isActive
+                    ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400'
                     : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}
                 `}
               >
@@ -79,9 +79,9 @@ export default function Sidebar({ isOpen, onClose }) {
             to="/profile"
             onClick={onClose}
             className={({ isActive }) => `
-              flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all
-              ${isActive 
-                ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' 
+              flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all 
+              ${isActive
+                ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400'
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}
             `}
           >

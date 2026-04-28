@@ -78,7 +78,7 @@ export default function Reports() {
     autoTable(doc, {
       startY: marginTop + 20, // Start below initial header and some margin
       head: [[t('metrics'), t('value')]],
-      body: [
+      body: [ 
         [t('totalIncome'), formatter.format(totalIncome)],
         [t('totalExpenses'), formatter.format(totalExpense)],
         [t('totalSavings'), formatter.format(netSavings)],
@@ -180,7 +180,7 @@ export default function Reports() {
             <div>
               <h3 className="text-xl font-bold font-headline text-indigo-900 dark:text-white mb-1">{t('incomeVsExpenses')}</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400">{t('yearToDateAnalysis')}</p>
-            </div>
+            </div> 
             <div className="flex space-x-4">
               <span className="flex items-center text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span>{t('income')}
@@ -208,7 +208,7 @@ export default function Reports() {
         {/* Right Column: Ratio & Quick Stats */}
         <div className="md:col-span-4 flex flex-col space-y-6">
           <div className="bg-indigo-600 dark:bg-indigo-700 text-white rounded-2xl p-8 flex-1 relative overflow-hidden shadow-lg shadow-indigo-200 dark:shadow-none">
-            <div className="absolute -right-4 -bottom-4 opacity-10 rotate-12">
+            <div className="absolute -right-4 -bottom-4 opacity-10 rotate-12"> 
               <Activity size={160} />
             </div>
             <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-200 mb-8 font-label">{t('cashFlowRatio')}</h3>
@@ -222,7 +222,7 @@ export default function Reports() {
             <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
               <div className="h-full bg-emerald-400 rounded-full" style={{ width: '72%' }}></div>
             </div>
-            <div className="flex justify-between mt-3">
+            <div className="flex justify-between mt-3"> 
               <span className="text-[10px] font-bold text-indigo-200 uppercase">{t('riskThreshold')}</span>
               <span className="text-[10px] font-bold text-white uppercase">{t('optimum')}</span>
             </div>
@@ -249,7 +249,7 @@ export default function Reports() {
         {/* Bottom Trio: Detailed Analytics */}
         <div className="md:col-span-4 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center rounded-xl mb-6">
-            <TrendingUp size={24} />
+            <TrendingUp size={24} /> 
           </div>
           <h3 className="font-headline font-bold text-lg text-indigo-900 dark:text-white mb-2">{t('growthVector')}</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">{t('growthVectorMsg')}</p>
@@ -258,7 +258,7 @@ export default function Reports() {
 
         <div className="md:col-span-4 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center rounded-xl mb-6">
-            <Wallet size={24} />
+            <Wallet size={24} /> 
           </div>
           <h3 className="font-headline font-bold text-lg text-indigo-900 dark:text-white mb-2">{t('liquidityScore')}</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">{t('liquidityScoreMsg')}</p>
@@ -326,7 +326,7 @@ export default function Reports() {
 
       {/* Footer Branding */}
       <footer className="mt-20 py-10 flex justify-between items-center border-t border-slate-200 dark:border-slate-800 opacity-40">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2"> 
           <span className="text-xl font-bold font-headline text-indigo-900 dark:text-indigo-400">PST</span>
           <span className="h-4 w-[1px] bg-indigo-900 dark:bg-indigo-400"></span>
           <span className="text-[10px] font-bold tracking-[0.2em] uppercase dark:text-white">Personal Saving Tracker System</span>

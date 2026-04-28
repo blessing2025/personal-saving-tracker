@@ -17,7 +17,7 @@ import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import VoiceRecords from './pages/VoiceRecords';
 import LoadingScreen from './components/common/LoadingScreen';
-import { Menu, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Menu, Wallet, ArrowRight } from 'lucide-react';
 import { db } from './lib/db';
 import { useOfflineSync } from './hooks/useOfflineSync'; // Import the offline sync hook
 import { Toaster } from 'react-hot-toast';
@@ -36,9 +36,9 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-[#f8f9fb] dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
       <div className="max-w-4xl w-full">
-        <div className="flex items-center justify-center gap-3 mb-8 animate-in fade-in zoom-in duration-700">
+        <div className="flex items-center justify-center gap-3 mb-8 animate-in fade-in zoom-in slide-in-from-top-12 duration-1000 ease-out">
           <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
-            <ShieldCheck size={32} />
+            <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
           </div>
           <span className="text-4xl font-black text-indigo-900 dark:text-white tracking-tighter">PST System</span>
         </div>
@@ -51,7 +51,7 @@ const Landing = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Link to="/login" className="px-10 py-5 bg-indigo-600 text-white rounded-full font-bold text-lg shadow-xl hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2">
             {t('signIn')} <ArrowRight size={20} />
-          </Link>
+          </Link> 
           <Link to="/register" className="px-10 py-5 bg-white dark:bg-slate-900 text-indigo-600 dark:text-white border border-slate-200 dark:border-slate-800 rounded-full font-bold text-lg hover:bg-slate-50 transition-all">
             {t('registerNow')}
           </Link>
@@ -87,6 +87,13 @@ const AppLayout = () => {
 const AppContent = () => {
   useOfflineSync(); // Initialize offline synchronization
   const { user, loading } = useAuth();
+  const [isAppReady, setIsAppReady] = useState(false);
+
+  useEffect(() => {
+    // Ensure the animated transition plays for at least 2 seconds on first load
+    const timer = setTimeout(() => setIsAppReady(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const profile = useLiveQuery(
     () => (user ? db.profiles.get(user.id) : null),
@@ -140,8 +147,24 @@ const AppContent = () => {
     }
   }, [profile?.date_format]);
 
-  if (loading) {
-    return <LoadingScreen />;
+  if (loading || !isAppReady) {
+    return (
+      <div className="fixed inset-0 bg-white dark:bg-slate-950 z-[100] flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
+          <div className="w-24 h-24 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-indigo-500/20 animate-bounce">
+            <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain" />
+          </div>
+          <div className="mt-8 text-center">
+            <h2 className="text-2xl font-black text-indigo-900 dark:text-white tracking-tighter">PST System</h2>
+            <div className="flex gap-1 justify-center mt-3">
+              <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse"></div>
+              <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse delay-75"></div>
+              <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse delay-150"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

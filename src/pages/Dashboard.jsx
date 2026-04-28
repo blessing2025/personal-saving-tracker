@@ -144,7 +144,7 @@ const Dashboard = () => {
     <div className="animate-in fade-in duration-500">
       {/* Header Section */}
       <header className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div>
+        <div> 
           <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Personal Saving Tracker</p>
           <h1 className="text-5xl font-extrabold tracking-tighter text-slate-900 dark:text-white">
             {t('welcomeBack')}, {profile?.full_name?.split(' ')[0] || user?.user_metadata?.firstName || user?.email?.split('@')[0] || ''}.
@@ -237,7 +237,7 @@ const Dashboard = () => {
               {monthlyData.map((d, i) => (
                 <div 
                   key={i} 
-                  style={{ height: `${(d.value / maxIncome) * 100}%` }} 
+                  style={{ height: `${(d.value / maxIncome) * 100}%` }}
                   className={`flex-1 ${d.value === bestMonthAmount && d.value > 0 ? 'bg-indigo-600' : 'bg-slate-100 dark:bg-slate-700'} rounded-t-lg transition-all hover:bg-indigo-400 group relative`}
                 />
               ))}
@@ -267,10 +267,10 @@ const Dashboard = () => {
 const MetricCard = ({ title, value, icon, color, trend, isPositive }) => (
   <div className="bg-white dark:bg-slate-800 rounded-xl p-8 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between min-h-[220px]">
     <div className="flex justify-between items-start">
-      <div className={`p-3 rounded-full ${
+      <div className={`p-3 rounded-full ${ 
         color === 'indigo' ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' :
         color === 'emerald' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' :
-        'bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
+        'bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' 
       }`}>
         {React.cloneElement(icon, { size: 28 })}
       </div>

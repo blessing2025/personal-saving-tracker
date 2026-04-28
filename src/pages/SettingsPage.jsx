@@ -98,7 +98,7 @@ const SettingsPage = () => {
       {/* Header Section */}
       <header>
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 mb-2 font-label">
-          {t('workspacePreferences') || 'Workspace Preferences'}
+          {t('workspacePreferences') || 'Workspace Preferences'} 
         </p>
         <h1 className="text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight font-headline">
           {t('systemSettings')}
@@ -114,7 +114,7 @@ const SettingsPage = () => {
                 <Globe size={22} />
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white font-headline">{t('generalConfig')}</h3>
-            </div>
+            </div> 
             
             <div className="space-y-8">
               <div className="space-y-2">
@@ -163,10 +163,10 @@ const SettingsPage = () => {
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                <Palette size={22} />
+                <Palette size={22} /> 
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white font-headline">{t('appearance') || 'Appearance'}</h3>
-            </div>
+            </div> 
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Light Mode Option */}
@@ -175,7 +175,7 @@ const SettingsPage = () => {
                 className={`relative p-1 rounded-2xl border-4 transition-all text-left ${theme === 'light' ? 'border-indigo-600 bg-indigo-50/30 dark:bg-indigo-900/20' : 'border-transparent bg-slate-50 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-slate-700'}`}
               >
                 <div className="bg-white rounded-xl p-4 mb-2 shadow-sm aspect-video flex flex-col justify-between border border-slate-100">
-                  <div className="flex gap-1">
+                  <div className="flex gap-1"> 
                     <div className="w-2 h-2 rounded-full bg-slate-200"></div>
                     <div className="w-8 h-2 rounded-full bg-slate-100"></div>
                   </div>
@@ -193,7 +193,7 @@ const SettingsPage = () => {
                 className={`relative p-1 rounded-2xl border-4 transition-all text-left ${theme === 'dark' ? 'border-indigo-600 bg-indigo-50/30 dark:bg-indigo-900/20' : 'border-transparent bg-slate-50 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-slate-700'}`}
               >
                 <div className="bg-slate-950 rounded-xl p-4 mb-2 shadow-sm aspect-video flex flex-col justify-between border border-slate-800">
-                  <div className="flex gap-1">
+                  <div className="flex gap-1"> 
                     <div className="w-2 h-2 rounded-full bg-slate-800"></div>
                     <div className="w-8 h-2 rounded-full bg-slate-900"></div>
                   </div>
@@ -267,7 +267,7 @@ const SettingsPage = () => {
             {isSyncing ? 'Syncing...' : `Last synced: Today at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
           </p>
         </button>
-        <div className="flex items-center gap-4 w-full sm:w-auto">
+        <div className="flex items-center gap-4 w-full sm:w-auto"> 
           <button 
             onClick={handleReset}
             className="flex-1 sm:px-8 py-3 text-slate-500 font-bold hover:text-slate-800 dark:hover:text-white transition-colors"

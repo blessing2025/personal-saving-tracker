@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PST System <notifications@yourdomain.com>', // Replace with your verified domain
+        from: 'PST System <notifications@resend.com>', // IMPORTANT: Replace with your OWN verified domain on Resend.com
         to: [recipientEmail],
         subject,
         html,
