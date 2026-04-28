@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v8'; // Increment cache version to force update
+const CACHE_NAME = 'pst-v9'; // Increment cache version to force update
 
 const ASSETS_TO_PRECACHE = [
   '/',
