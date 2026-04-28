@@ -46,6 +46,11 @@ export default function VoiceRecords() {
       });
 
       if (error) throw error;
+
+      // Check if the edge function returned an internal error
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       
       toast.success(t('parseSuccess'), { id: tid });
       navigate('/expenses', { state: { prefill: data } });
