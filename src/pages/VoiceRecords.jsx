@@ -106,7 +106,7 @@ export default function VoiceRecords() {
           {t('voiceExpenseTracker')}
         </h1>
         <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
-          Capture quick voice memos for your financial records. These notes are saved locally for your reference.
+          {t('voiceMemoDescription')}
         </p>
       </header>
 
@@ -120,7 +120,7 @@ export default function VoiceRecords() {
               {isRecording ? t('recording') : t('readyToRecord')}
             </span>
             <h2 className="font-headline text-3xl font-extrabold text-slate-900 dark:text-white">
-              Voice Memo Recorder
+              {t('voiceMemoRecorder')}
             </h2>
           </div>
 
@@ -151,22 +151,22 @@ export default function VoiceRecords() {
         <section className="lg:col-span-5 space-y-8">
           <div className="bg-indigo-600 dark:bg-indigo-700 text-white p-8 rounded-2xl relative overflow-hidden shadow-xl">
             <h3 className="font-headline text-xl font-bold mb-2 flex items-center gap-2">
-              How it works
+              {t('voiceRecordsHowItWorks')}
             </h3>
             <p className="text-sm text-indigo-100 opacity-90 leading-relaxed">
-              Your recordings are stored securely in your browser's local database. You can listen back to them whenever you need to update your ledger.
+              {t('voiceRecordsHowItWorksDescription')}
             </p>
           </div>
 
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-headline font-bold text-slate-900 dark:text-white mb-6">Recent Voice Entries</h3>
+            <h3 className="font-headline font-bold text-slate-900 dark:text-white mb-6">{t('recentVoiceEntries')}</h3>
             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
               {sortedRecordings.map((rec) => (
                 <div key={rec.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm group">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
                       <CheckCircle2 size={16} className="text-emerald-500" />
-                      <span className="font-bold text-sm text-slate-800 dark:text-slate-200">Voice Note</span>
+                      <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{t('voiceNote')}</span>
                     </div>
                     <button onClick={() => deleteRecording(rec.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-600 transition-all">
                       <Trash2 size={16} />
@@ -181,7 +181,7 @@ export default function VoiceRecords() {
               ))}
               {sortedRecordings.length === 0 && (
                 <div className="text-center py-10 text-slate-400 text-sm italic">
-                  No voice notes captured yet.
+                  {t('noVoiceNotesCaptured')}
                 </div>
               )}
             </div>
@@ -190,20 +190,20 @@ export default function VoiceRecords() {
           <div className="grid grid-cols-2 gap-4">
             <Link to="/expenses" className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-indigo-50 transition-all group shadow-sm">
               <ReceiptText size={20} className="text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
-              <p className="font-bold text-slate-800 dark:text-white text-sm">Manual Entry</p>
+              <p className="font-bold text-slate-800 dark:text-white text-sm">{t('manualEntry')}</p>
             </Link>
             <button className="p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-indigo-50 transition-all group shadow-sm">
               <Upload size={20} className="text-indigo-600 mb-4 group-hover:scale-110 transition-transform" />
-              <p className="font-bold text-slate-800 dark:text-white text-sm">Import Audio</p>
+              <p className="font-bold text-slate-800 dark:text-white text-sm">{t('importAudio')}</p>
             </button>
           </div>
         </section>
       </div>
 
       <section className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <FeatureCard title="Storage" value="IndexedDB" desc="All audio is stored locally in your browser's vault." color="indigo" />
-        <FeatureCard title="Privacy" value="100% Secure" desc="No audio data ever leaves your device." color="emerald" />
-        <FeatureCard title="Accessibility" value="Offline" desc="Record memos even without an internet connection." color="rose" icon={<ShieldCheck size={24} />} />
+        <FeatureCard title={t('storage')} value={t('indexedDB')} desc={t('storageDesc')} color="indigo" />
+        <FeatureCard title={t('privacy')} value={t('secure100')} desc={t('privacyDesc')} color="emerald" />
+        <FeatureCard title={t('accessibility')} value={t('offline')} desc={t('accessibilityDesc')} color="rose" icon={<ShieldCheck size={24} />} />
       </section>
     </div>
   );
