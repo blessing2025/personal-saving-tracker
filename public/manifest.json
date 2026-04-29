@@ -1,7 +1,7 @@
 {
-  "name": "Personal Saving Tracker System",
-  "short_name": "PST System",
-  "description": "Professional Financial Tracking and Wealth Management",
+  "name": "Personal Saving Tracker",
+  "short_name": "PST",
+  "description": "Premium Financial Management & Secure Ledger",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",
   "scope": "/",
@@ -17,7 +17,7 @@
     },
     {
       "src": "/logo.png",
-      "sizes": "192x192",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
@@ -26,24 +26,18 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "https://via.placeholder.com/1280x720.png?text=PST+System+Desktop+Dashboard",
+      "src": "https://via.placeholder.com/1280x720.png?text=PST+Dashboard",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Desktop view of the dashboard"
     },
     {
-      "src": "https://via.placeholder.com/720x1280.png?text=PST+System+Mobile+Dashboard",
+      "src": "https://via.placeholder.com/720x1280.png?text=PST+Mobile",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow",

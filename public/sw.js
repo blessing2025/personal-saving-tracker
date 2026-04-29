@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v9'; // Increment cache version to force update
+const CACHE_NAME = 'pst-v10'; // Updated for offline and installability fixes
 
 const ASSETS_TO_PRECACHE = [
   '/',
@@ -48,9 +48,9 @@ self.addEventListener('fetch', (event) => {
   // For navigation requests (e.g., direct URL entry, refresh on a sub-route)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
+      caches.match('/', { ignoreSearch: true }).then(cachedResponse => {
         return cachedResponse || fetch(event.request).catch(() => {
-          return caches.match('/', { ignoreSearch: true }); // Fallback to root shell if offline
+          return caches.match('/', { ignoreSearch: true }); 
         });
       })
     );

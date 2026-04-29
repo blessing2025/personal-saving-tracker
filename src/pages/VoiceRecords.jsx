@@ -7,7 +7,6 @@ import {
   Square, 
   Trash2, 
   Calendar, 
-  Sparkles, 
   ReceiptText, 
   Upload, 
   ShieldCheck, 
@@ -25,42 +24,8 @@ export default function VoiceRecords() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
-
-  const processWithAI = async (blob) => {
-    setIsProcessing(true);
-    const tid = toast.loading(t('processingAI'));
-    
-    try {
-      const base64Audio = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-
-      const { data, error } = await supabase.functions.invoke('openai_api', {
-        body: { audio: base64Audio }
-      });
-
-      if (error) throw error;
-
-      // Check if the edge function returned an internal error
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-      
-      toast.success(t('parseSuccess'), { id: tid });
-      navigate('/expenses', { state: { prefill: data } });
-    } catch (err) {
-      console.error('[VoiceRecord] AI Processing Error:', err);
-      toast.error(t('parseError'), { id: tid });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const recordings = useLiveQuery(() => 
     user ? db.voiceRecords.where('user_id').equals(user.id).filter(item => !item._deleted).toArray() : []
@@ -80,7 +45,6 @@ export default function VoiceRecords() {
 
       mediaRecorderRef.current.onstop = async () => {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        await processWithAI(audioBlob);
         
         await db.voiceRecords.add({
           id: crypto.randomUUID(),
@@ -139,7 +103,7 @@ export default function VoiceRecords() {
           {t('voiceExpenseTracker')}
         </h1>
         <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl">
-          {t('voiceTrackerMotto') || "Tap to record your expenses on the go. Our system will parse your speech into formatted ledger entries."}
+          Capture quick voice memos for your financial records. These notes are saved locally for your reference.
         </p>
       </header>
 
@@ -153,7 +117,7 @@ export default function VoiceRecords() {
               {isRecording ? t('recording') : t('readyToRecord')}
             </span>
             <h2 className="font-headline text-3xl font-extrabold text-slate-900 dark:text-white">
-              Financial Dictation
+              Voice Memo Recorder
             </h2>
           </div>
 
@@ -174,9 +138,6 @@ export default function VoiceRecords() {
           </div>
 
           <div className="mt-12 text-center max-w-sm">
-            <p className="text-slate-500 dark:text-slate-400 font-medium mb-6 italic">
-              "{t('voiceExample') || 'Bought groceries at Whole Foods for $54.20'}"
-            </p>
             <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               {isRecording ? t('recordingInProgress') : t('tapToCapture')}
             </p>
@@ -187,11 +148,10 @@ export default function VoiceRecords() {
         <section className="lg:col-span-5 space-y-8">
           <div className="bg-indigo-600 dark:bg-indigo-700 text-white p-8 rounded-2xl relative overflow-hidden shadow-xl">
             <h3 className="font-headline text-xl font-bold mb-2 flex items-center gap-2">
-              <Sparkles size={20} className="text-indigo-200" />
               How it works
             </h3>
             <p className="text-sm text-indigo-100 opacity-90 leading-relaxed">
-              Speak naturally. Mention the merchant, amount, and category. Our engine handles the rest.
+              Your recordings are stored securely in your browser's local database. You can listen back to them whenever you need to update your ledger.
             </p>
           </div>
 
@@ -238,9 +198,9 @@ export default function VoiceRecords() {
       </div>
 
       <section className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <FeatureCard title="Accuracy" value="99.2%" desc="Proprietary model trained on financial terminology." color="indigo" />
-        <FeatureCard title="Smart Sorting" value="Automated" desc="Expenses are tagged to categories based on context." color="emerald" />
-        <FeatureCard title="Security" value="Local Vault" desc="Voice data is processed locally whenever possible." color="rose" icon={<ShieldCheck size={24} />} />
+        <FeatureCard title="Storage" value="IndexedDB" desc="All audio is stored locally in your browser's vault." color="indigo" />
+        <FeatureCard title="Privacy" value="100% Secure" desc="No audio data ever leaves your device." color="emerald" />
+        <FeatureCard title="Accessibility" value="Offline" desc="Record memos even without an internet connection." color="rose" icon={<ShieldCheck size={24} />} />
       </section>
     </div>
   );
@@ -251,7 +211,7 @@ const FeatureCard = ({ title, value, desc, color, icon }) => (
     <p className={`text-[10px] font-bold uppercase tracking-widest mb-6 ${color === 'indigo' ? 'text-indigo-600' : color === 'emerald' ? 'text-emerald-600' : 'text-rose-600'}`}>{title}</p>
     <div className="h-40 rounded-xl bg-slate-50 dark:bg-slate-900/50 mb-6 flex items-center justify-center border border-slate-100 dark:border-slate-700">
        <div className={`w-16 h-16 rounded-full flex items-center justify-center ${color === 'indigo' ? 'bg-indigo-100 text-indigo-600' : color === 'emerald' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-          {icon || <Sparkles size={28} />}
+          {icon || <Mic size={28} />}
        </div>
     </div>
     <h4 className="font-headline text-lg font-bold text-slate-900 dark:text-white mb-2">{value}</h4>
