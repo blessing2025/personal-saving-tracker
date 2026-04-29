@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v15'; // Incremented to force update for PDF fix
+const CACHE_NAME = 'pst-v16'; // Force update for PWA installability fix
 
 const ASSETS_TO_PRECACHE = [
   '/',

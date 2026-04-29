@@ -71,6 +71,8 @@ export default function Reports() {
     const pageHeight = doc.internal.pageSize.height;
     const marginTop = 20; // Standard top margin for new pages
     const marginBottom = 20; // Standard bottom margin
+    const chartWidth = 180;
+    const chartHeight = 80;
 
     // Add Report Header
     doc.setFontSize(22);
@@ -114,20 +116,28 @@ export default function Reports() {
 
     // Configuration for html2canvas to handle Tailwind v4's oklch colors
     const html2canvasOptions = {
-      scale: 1, // Reduced to 1 for mobile memory efficiency
+      scale: 1.5, // Balanced for quality and mobile memory
       useCORS: true,
       logging: false,
+      windowWidth: 1200, // Force a desktop-width layout for the render
       backgroundColor: profile?.theme === 'dark' ? '#1e293b' : '#ffffff',
       onclone: (clonedDoc) => {
         const container = clonedDoc.getElementById('pdf-chart-container');
         if (container) {
+          // Force dimensions for the cloned environment
+          container.style.width = '1000px';
+          container.style.height = '500px';
           container.style.background = profile?.theme === 'dark' ? '#1e293b' : '#ffffff';
+          
           const elements = container.querySelectorAll('*');
           elements.forEach(el => {
-            const fill = el.getAttribute('fill');
-            const stroke = el.getAttribute('stroke');
-            if (fill && fill.includes('oklch')) el.setAttribute('fill', '#6366f1');
-            if (stroke && stroke.includes('oklch')) el.setAttribute('stroke', '#6366f1');
+            // Scrub oklch from attributes and styles
+            ['fill', 'stroke'].forEach(attr => {
+              const val = el.getAttribute(attr);
+              if (val && val.includes('oklch')) el.setAttribute(attr, '#6366f1');
+            });
+            if (el.style.fill?.includes('oklch')) el.style.fill = '#6366f1';
+            if (el.style.stroke?.includes('oklch')) el.style.stroke = '#6366f1';
           });
         }
       }
@@ -135,13 +145,14 @@ export default function Reports() {
 
     try {
       if (barChartRef.current) {
-        checkAndAddPage(100); // Check for title + image space
+        checkAndAddPage(chartHeight + 20); 
 
         const canvas = await html2canvas(barChartRef.current, html2canvasOptions);
         const imgData = canvas.toDataURL('image/png');
         doc.setFontSize(14);
         doc.text(t('incomeVsExpensesVisual'), 14, currentY);
-        doc.addImage(imgData, 'PNG', 15, currentY + 10, 180, 80);
+        doc.addImage(imgData, 'PNG', 15, currentY + 10, chartWidth, chartHeight);
+        currentY += chartHeight + 20;
       }
 
       doc.save('Financial_Report.pdf');
