@@ -24,6 +24,29 @@ import { Toaster } from 'react-hot-toast';
 import { translations } from './lib/translations';
 import { TranslationContext, useTranslation } from './contexts/TranslationContext';
 
+// Simple Error Boundary to catch component crashes
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error) { return { hasError: true }; }
+  componentDidCatch(error, errorInfo) { console.error("App Crash:", error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-950 text-center">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Something went wrong.</h2>
+          <button onClick={() => window.location.href = '/'} className="px-6 py-2 bg-indigo-600 text-white rounded-full font-bold">
+            Return to Dashboard
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Helper to protect private routes
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -170,6 +193,7 @@ const AppContent = () => {
   return (
     <I18nProvider locale={profile?.language || 'en-US'}>
       <TranslationContext.Provider value={{ t, profile, formatDate }}>
+      <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
         <Toaster position="top-right" />
         <Routes>
@@ -193,6 +217,7 @@ const AppContent = () => {
           </Route>
         </Routes>
       </div>
+      </ErrorBoundary>
       </TranslationContext.Provider>
     </I18nProvider>
   );

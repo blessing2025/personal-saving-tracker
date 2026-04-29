@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNumberFormatter } from 'react-aria';
 import { jsPDF } from 'jspdf';
@@ -25,6 +25,29 @@ export default function Reports() {
   const { t, profile, formatDate } = useTranslation();
   const { user } = useAuth();
   const barChartRef = useRef(null);
+  const chartContainerRef = useRef(null); // Ref for the parent div of ResponsiveContainer
+  const [isMounted, setIsMounted] = useState(false);
+  const [chartDimensions, setChartDimensions] = useState({ width: 0, height: 0 });
+
+  // Delay chart rendering to ensure parent container dimensions are calculated correctly
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Measure chart container dimensions after mount
+  useLayoutEffect(() => {
+    if (chartContainerRef.current) {
+      const updateDimensions = () => {
+        setChartDimensions({
+          width: chartContainerRef.current.offsetWidth,
+          height: chartContainerRef.current.offsetHeight,
+        });
+      };
+      updateDimensions();
+      window.addEventListener('resize', updateDimensions);
+      return () => window.removeEventListener('resize', updateDimensions);
+    }
+  }, [isMounted]); // Re-measure if mounted state changes
 
   const formatter = useNumberFormatter({
     style: 'currency',
@@ -58,7 +81,21 @@ export default function Reports() {
     { name: t('expenses'), value: totalExpense }
   ];
 
-  const COLORS = ['#10B981', '#6366F1']; // Emerald and Indigo
+  const COLORS = ['oklch(76.09% 0.16 146.96)', 'oklch(49.8% 0.24 270.08)']; // Emerald and Indigo in oklch
+
+  // Utility to convert oklch to hex for html2canvas compatibility
+  const oklchToHex = (oklchColor) => {
+    // This is a simplified conversion. For a full conversion, a library would be needed.
+    // For Tailwind's default oklch colors, we can map them to their hex equivalents.
+    if (oklchColor.includes('oklch(76.09% 0.16 146.96)')) return '#10B981'; // emerald-500
+    if (oklchColor.includes('oklch(49.8% 0.24 270.08)')) return '#6366F1'; // indigo-500
+    // Add other oklch colors if they appear in your charts
+    return '#6366F1'; // Default to indigo if not recognized
+  };
+
+  // Convert COLORS to hex for html2canvas compatibility
+  const CHART_COLORS_HEX = COLORS.map(color => color.includes('oklch') ? oklchToHex(color) : color);
+
 
   const handleExport = async () => {
     const tid = toast.loading(t('loading') || 'Generating PDF...');
@@ -122,23 +159,40 @@ export default function Reports() {
       windowWidth: 1200, // Force a desktop-width layout for the render
       backgroundColor: profile?.theme === 'dark' ? '#1e293b' : '#ffffff',
       onclone: (clonedDoc) => {
+        // Global sanitization: replace oklch in all <style> tags to prevent html2canvas parsing errors
+        const styleTags = clonedDoc.getElementsByTagName('style');
+        Array.from(styleTags).forEach(tag => {
+          try {
+            tag.innerHTML = tag.innerHTML.replace(/oklch\([^\)]+\)/gi, '#6366f1');
+          } catch (e) { /* ignore read-only style tags */ }
+        });
+
+        // Broad sweep of all elements to sanitize inline styles and SVG attributes (fill, stroke, etc.)
+        Array.from(clonedDoc.getElementsByTagName('*')).forEach(el => {
+          // Disable transitions and animations to ensure a static snapshot
+          el.style.transition = 'none';
+          el.style.animation = 'none';
+
+          // Sanitize all attributes (catches fill, stroke, stop-color, etc.)
+          Array.from(el.attributes).forEach(attr => {
+            if (attr.value && String(attr.value).toLowerCase().includes('oklch')) {
+              el.setAttribute(attr.name, attr.value.replace(/oklch\([^\)]+\)/gi, '#6366f1'));
+            }
+          });
+
+          // Sanitize inline CSS in the style attribute
+          if (el.style && el.style.cssText.toLowerCase().includes('oklch')) {
+            el.style.cssText = el.style.cssText.replace(/oklch\([^\)]+\)/gi, '#6366f1');
+          }
+        });
+
         const container = clonedDoc.getElementById('pdf-chart-container');
         if (container) {
-          // Force dimensions for the cloned environment
-          container.style.width = '1000px';
-          container.style.height = '500px';
+          // Ensure the cloned container has a fixed, non-responsive size for the canvas capture
+          container.style.width = '1200px';
+          container.style.height = '600px';
+          container.style.position = 'relative';
           container.style.background = profile?.theme === 'dark' ? '#1e293b' : '#ffffff';
-          
-          const elements = container.querySelectorAll('*');
-          elements.forEach(el => {
-            // Scrub oklch from attributes and styles
-            ['fill', 'stroke'].forEach(attr => {
-              const val = el.getAttribute(attr);
-              if (val && val.includes('oklch')) el.setAttribute(attr, '#6366f1');
-            });
-            if (el.style.fill?.includes('oklch')) el.style.fill = '#6366f1';
-            if (el.style.stroke?.includes('oklch')) el.style.stroke = '#6366f1';
-          });
         }
       }
     };
@@ -189,7 +243,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
         {/* Main Chart: Income vs Expenses */}
-        <div id="pdf-chart-container" ref={barChartRef} className="md:col-span-8 bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm h-96"
+        <div id="pdf-chart-container" ref={chartContainerRef} className="md:col-span-8 bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm h-96 min-w-0 min-h-[24rem]"
           style={{ 
             backgroundColor: profile?.theme === 'dark' ? '#1e293b' : '#ffffff',
             borderColor: profile?.theme === 'dark' ? '#334155' : '#e2e8f0' 
@@ -208,19 +262,25 @@ export default function Reports() {
               </span>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height="100%">
+          {isMounted && (
+            <ResponsiveContainer
+              width={chartDimensions.width} // Explicit width
+              height={chartDimensions.height} // Explicit height
+              debounce={50} // Keep debounce for smooth resizing
+            >
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
               <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
               <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
               <Tooltip contentStyle={{ backgroundColor: profile?.theme === 'dark' ? '#1e293b' : '#fff', border: 'none', borderRadius: '8px' }} />
               <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={40}>
-                {chartData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={CHART_COLORS_HEX[index % CHART_COLORS_HEX.length]} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         {/* Right Column: Ratio & Quick Stats */}

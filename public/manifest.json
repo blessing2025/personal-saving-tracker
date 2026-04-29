@@ -36,14 +36,14 @@
   ],
   "screenshots": [
     {
-      "src": "https://via.placeholder.com/1280x720.png?text=PST+Desktop+Dashboard",
+      "src": "https://placehold.co/1280x720/4f46e5/ffffff/png?text=PST+Desktop",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Desktop view of the dashboard"
     },
     {
-      "src": "https://via.placeholder.com/720x1280.png?text=PST+Mobile+Ledger",
+      "src": "https://placehold.co/720x1280/4f46e5/ffffff/png?text=PST+Mobile",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow",
