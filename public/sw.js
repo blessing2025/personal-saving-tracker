@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v20'; // Force update for PWA installability check
+const CACHE_NAME = 'pst-v21'; // Force update for apple-touch-icon fix
 
 const ASSETS_TO_PRECACHE = [
   '/',
