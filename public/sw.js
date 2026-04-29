@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v13'; // Incremented to refresh cache and manifest logic
+const CACHE_NAME = 'pst-v14'; // Incremented to refresh cache and manifest logic
 
 const ASSETS_TO_PRECACHE = [
   '/',

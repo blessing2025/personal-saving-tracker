@@ -112,21 +112,25 @@ export default function Reports() {
       scale: 2,
       useCORS: true,
       logging: false,
-      width: barChartRef.current.offsetWidth,
-      height: barChartRef.current.offsetHeight,
+      windowWidth: 1400, // Force a wider viewport for the clone to ensure consistent layout
+      windowHeight: 1000,
       backgroundColor: profile?.theme === 'dark' ? '#1e293b' : '#ffffff',
       onclone: (clonedDoc) => {
-        // Global sanitization of Tailwind v4 oklch colors for html2canvas compatibility
+        // Optimized color sanitization for mobile performance
         const styleTags = Array.from(clonedDoc.getElementsByTagName('style'));
         styleTags.forEach(tag => {
           tag.innerHTML = tag.innerHTML.replace(/oklch\([^)]+\)/g, '#6366f1');
         });
 
-        const elements = clonedDoc.querySelectorAll('*');
-        elements.forEach(el => {
-          Array.from(el.attributes).forEach(attr => {
-            if (attr.value.includes('oklch')) {
-              el.setAttribute(attr.name, attr.value.replace(/oklch\([^)]+\)/g, '#6366f1'));
+        const container = clonedDoc.getElementById('pdf-chart-container');
+        if (!container) return;
+
+        const coloredElements = container.querySelectorAll('[fill*="oklch"], [stroke*="oklch"], [style*="oklch"]');
+        coloredElements.forEach(el => {
+          ['fill', 'stroke', 'style'].forEach(attrName => {
+            const val = el.getAttribute(attrName);
+            if (val && val.includes('oklch')) {
+              el.setAttribute(attrName, val.replace(/oklch\([^)]+\)/g, '#6366f1'));
             }
           });
         });
