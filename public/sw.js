@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v26'; // Hide install banner on desktop
+const CACHE_NAME = 'pst-v27'; // Force update for installation fix
 
 const ASSETS_TO_PRECACHE = [
   '/',
@@ -48,10 +48,8 @@ self.addEventListener('fetch', (event) => {
   // For navigation requests (e.g., direct URL entry, refresh on a sub-route)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match('/', { ignoreSearch: true }).then((cachedResponse) => {
-        // Try to get fresh content from network, but return cached shell immediately if network is slow/offline
-        const fetchPromise = fetch(event.request).catch(() => cachedResponse);
-        return cachedResponse || fetchPromise;
+      fetch(event.request).catch(() => {
+        return caches.match('/', { ignoreSearch: true });
       })
     );
     return;
