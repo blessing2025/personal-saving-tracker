@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v14'; // Incremented to refresh cache and manifest logic
+const CACHE_NAME = 'pst-v15'; // Incremented to force update for PDF fix
 
 const ASSETS_TO_PRECACHE = [
   '/',

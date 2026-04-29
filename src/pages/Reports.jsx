@@ -62,7 +62,12 @@ export default function Reports() {
 
   const handleExport = async () => {
     const tid = toast.loading(t('loading') || 'Generating PDF...');
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
     const pageHeight = doc.internal.pageSize.height;
     const marginTop = 20; // Standard top margin for new pages
     const marginBottom = 20; // Standard bottom margin
@@ -109,51 +114,37 @@ export default function Reports() {
 
     // Configuration for html2canvas to handle Tailwind v4's oklch colors
     const html2canvasOptions = {
-      scale: 2,
+      scale: 1, // Reduced to 1 for mobile memory efficiency
       useCORS: true,
       logging: false,
-      windowWidth: 1400, // Force a wider viewport for the clone to ensure consistent layout
-      windowHeight: 1000,
       backgroundColor: profile?.theme === 'dark' ? '#1e293b' : '#ffffff',
       onclone: (clonedDoc) => {
-        // Optimized color sanitization for mobile performance
-        const styleTags = Array.from(clonedDoc.getElementsByTagName('style'));
-        styleTags.forEach(tag => {
-          tag.innerHTML = tag.innerHTML.replace(/oklch\([^)]+\)/g, '#6366f1');
-        });
-
         const container = clonedDoc.getElementById('pdf-chart-container');
-        if (!container) return;
-
-        const coloredElements = container.querySelectorAll('[fill*="oklch"], [stroke*="oklch"], [style*="oklch"]');
-        coloredElements.forEach(el => {
-          ['fill', 'stroke', 'style'].forEach(attrName => {
-            const val = el.getAttribute(attrName);
-            if (val && val.includes('oklch')) {
-              el.setAttribute(attrName, val.replace(/oklch\([^)]+\)/g, '#6366f1'));
-            }
+        if (container) {
+          container.style.background = profile?.theme === 'dark' ? '#1e293b' : '#ffffff';
+          const elements = container.querySelectorAll('*');
+          elements.forEach(el => {
+            const fill = el.getAttribute('fill');
+            const stroke = el.getAttribute('stroke');
+            if (fill && fill.includes('oklch')) el.setAttribute('fill', '#6366f1');
+            if (stroke && stroke.includes('oklch')) el.setAttribute('stroke', '#6366f1');
           });
-        });
+        }
       }
     };
 
     try {
       if (barChartRef.current) {
-        const barChartTitleHeight = 10;
-        const barChartImageHeight = 80;
-        const barChartMargin = 10;
-        const estimatedBarChartSectionHeight = barChartTitleHeight + barChartImageHeight + barChartMargin;
-
-        checkAndAddPage(estimatedBarChartSectionHeight);
+        checkAndAddPage(100); // Check for title + image space
 
         const canvas = await html2canvas(barChartRef.current, html2canvasOptions);
         const imgData = canvas.toDataURL('image/png');
         doc.setFontSize(14);
         doc.text(t('incomeVsExpensesVisual'), 14, currentY);
-        doc.addImage(imgData, 'PNG', 15, currentY + barChartMargin, 180, barChartImageHeight);
+        doc.addImage(imgData, 'PNG', 15, currentY + 10, 180, 80);
       }
 
-      doc.save(`PST_Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save('Financial_Report.pdf');
       toast.success(t('saved') || 'Report exported!', { id: tid });
     } catch (error) {
       console.error('PDF Export failed:', error);
