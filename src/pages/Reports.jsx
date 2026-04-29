@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { TrendingUp, FileDown, Activity, Zap, AlertTriangle, CheckCircle2, Clock, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function Reports() {
   const { t, profile, formatDate } = useTranslation();
@@ -81,7 +82,7 @@ export default function Reports() {
       body: [ 
         [t('totalIncome'), formatter.format(totalIncome)],
         [t('totalExpenses'), formatter.format(totalExpense)],
-        [t('totalSavings'), formatter.format(netSavings)],
+        [t('netWorth') || 'Net Worth', formatter.format(netSavings)],
       ],
       headStyles: { fillColor: [79, 70, 229] }, // indigo-600
     });
@@ -99,7 +100,7 @@ export default function Reports() {
         doc.setFontSize(10);
         doc.setTextColor(100);
         doc.text(t('reportContinued'), 14, currentY + 8);
-        currentY += 15; // Space for the continued header
+        currentY += 20; // Space for the continued header
       }
     };
 
@@ -110,43 +111,49 @@ export default function Reports() {
       scale: 2,
       useCORS: true,
       logging: false,
+      width: barChartRef.current.offsetWidth,
+      height: barChartRef.current.offsetHeight,
       backgroundColor: profile?.theme === 'dark' ? '#1e293b' : '#ffffff',
       onclone: (clonedDoc) => {
-        // Global sanitization of Tailwind v4 oklch colors
+        // Global sanitization of Tailwind v4 oklch colors for html2canvas compatibility
         const styleTags = Array.from(clonedDoc.getElementsByTagName('style'));
         styleTags.forEach(tag => {
-          tag.innerHTML = tag.innerHTML.replace(/oklch\([^)]+\)/g, '#94a3b8');
+          tag.innerHTML = tag.innerHTML.replace(/oklch\([^)]+\)/g, '#6366f1');
         });
 
         const elements = clonedDoc.querySelectorAll('*');
         elements.forEach(el => {
           Array.from(el.attributes).forEach(attr => {
             if (attr.value.includes('oklch')) {
-              el.setAttribute(attr.name, attr.value.replace(/oklch\([^)]+\)/g, '#94a3b8'));
+              el.setAttribute(attr.name, attr.value.replace(/oklch\([^)]+\)/g, '#6366f1'));
             }
           });
         });
       }
     };
 
-    // Capture and add Bar Chart
-    if (barChartRef.current) {
-      const barChartTitleHeight = 14; // Estimated font size 14pt
-      const barChartImageHeight = 60; // Height passed to doc.addImage
-      const barChartMargin = 5; // Margin below title, above image
-      const estimatedBarChartSectionHeight = barChartTitleHeight + barChartImageHeight + barChartMargin;
+    try {
+      if (barChartRef.current) {
+        const barChartTitleHeight = 10;
+        const barChartImageHeight = 80;
+        const barChartMargin = 10;
+        const estimatedBarChartSectionHeight = barChartTitleHeight + barChartImageHeight + barChartMargin;
 
-      checkAndAddPage(estimatedBarChartSectionHeight);
+        checkAndAddPage(estimatedBarChartSectionHeight);
 
-      const canvas = await html2canvas(barChartRef.current, html2canvasOptions);
-      const imgData = canvas.toDataURL('image/png');
-      doc.setFontSize(14);
-      doc.text(t('incomeVsExpensesVisual'), 14, currentY);
-      doc.addImage(imgData, 'PNG', 15, currentY + barChartMargin, 180, barChartImageHeight);
-      currentY += estimatedBarChartSectionHeight + 10; // Update currentY after adding chart + small margin
+        const canvas = await html2canvas(barChartRef.current, html2canvasOptions);
+        const imgData = canvas.toDataURL('image/png');
+        doc.setFontSize(14);
+        doc.text(t('incomeVsExpensesVisual'), 14, currentY);
+        doc.addImage(imgData, 'PNG', 15, currentY + barChartMargin, 180, barChartImageHeight);
+      }
+
+      doc.save(`PST_Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success(t('saved') || 'Report exported!', { id: tid });
+    } catch (error) {
+      console.error('PDF Export failed:', error);
+      toast.error('Failed to generate PDF', { id: tid });
     }
-
-    doc.save(`Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
@@ -171,7 +178,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
         {/* Main Chart: Income vs Expenses */}
-        <div ref={barChartRef} className="md:col-span-8 bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm h-96"
+        <div id="pdf-chart-container" ref={barChartRef} className="md:col-span-8 bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm h-96"
           style={{ 
             backgroundColor: profile?.theme === 'dark' ? '#1e293b' : '#ffffff',
             borderColor: profile?.theme === 'dark' ? '#334155' : '#e2e8f0' 
