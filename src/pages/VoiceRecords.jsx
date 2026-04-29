@@ -24,6 +24,7 @@ export default function VoiceRecords() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
 
@@ -49,13 +50,39 @@ export default function VoiceRecords() {
       mediaRecorderRef.current.onstop = async () => {
         const audioBlob = new Blob(chunksRef.current, { type: mimeType });
         
-        await db.voiceRecords.add({
+        const recordId = await db.voiceRecords.add({
           id: crypto.randomUUID(),
           user_id: user.id,
           blob: audioBlob,
           date: new Date().toISOString()
         });
-        toast.success(t('voiceNoteSaved'));
+
+        // Convert blob to base64 for the OpenAI Edge Function
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result.split(',')[1];
+          setIsProcessing(true);
+          const tid = toast.loading(t('processingAI'));
+
+          try {
+            const { data, error } = await supabase.functions.invoke('openai_api', {
+              body: { audio: base64Audio }
+            });
+
+            if (error) throw error;
+
+            toast.success(t('parseSuccess'), { id: tid });
+            // Navigate to expenses with the AI-extracted data
+            navigate('/expenses', { state: { prefill: data } });
+          } catch (err) {
+            console.error("AI Processing Error:", err);
+            toast.error(t('parseError'), { id: tid });
+          } finally {
+            setIsProcessing(false);
+          }
+        };
+
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -117,7 +144,7 @@ export default function VoiceRecords() {
           
           <div className="text-center mb-10">
             <span className={`inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${isRecording ? 'bg-rose-100 text-rose-600 animate-pulse' : 'bg-emerald-50 text-emerald-600'}`}>
-              {isRecording ? t('recording') : t('readyToRecord')}
+              {isProcessing ? t('loading') : isRecording ? t('recording') : t('readyToRecord')}
             </span>
             <h2 className="font-headline text-3xl font-extrabold text-slate-900 dark:text-white">
               {t('voiceMemoRecorder')}
@@ -125,7 +152,7 @@ export default function VoiceRecords() {
           </div>
 
           <div className="relative group transition-transform duration-200">
-            {isRecording && (
+            {(isRecording || isProcessing) && (
               <div className="absolute inset-0 flex items-center justify-center gap-1.5">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div key={i} className="w-1.5 bg-indigo-500 rounded-full animate-pulse" style={{ height: `${20 + (i % 3) * 20}%`, animationDelay: `${i * 0.1}s` }}></div>
@@ -134,15 +161,16 @@ export default function VoiceRecords() {
             )}
             <button 
               onClick={isRecording ? stopRecording : startRecording}
-              className={`relative z-10 w-32 h-32 rounded-full flex items-center justify-center text-white shadow-2xl transition-all active:scale-95 ${isRecording ? 'bg-rose-600' : 'bg-indigo-600'}`}
+              disabled={isProcessing}
+              className={`relative z-10 w-32 h-32 rounded-full flex items-center justify-center text-white shadow-2xl transition-all active:scale-95 ${isProcessing ? 'bg-slate-400 cursor-not-allowed' : isRecording ? 'bg-rose-600' : 'bg-indigo-600'}`}
             >
-              {isRecording ? <Square size={48} /> : <Mic size={48} />}
+              {isProcessing ? <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" /> : isRecording ? <Square size={48} /> : <Mic size={48} />}
             </button>
           </div>
 
           <div className="mt-12 text-center max-w-sm">
             <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              {isRecording ? t('recordingInProgress') : t('tapToCapture')}
+              {isProcessing ? t('processingAI') : isRecording ? t('recordingInProgress') : t('tapToCapture')}
             </p>
           </div>
         </section>

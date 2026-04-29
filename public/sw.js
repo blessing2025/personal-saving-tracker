@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v27'; // Force update for installation fix
+const CACHE_NAME = 'pst-v29'; // Synchronize icon sizes for installation fix
 
 const ASSETS_TO_PRECACHE = [
   '/',
