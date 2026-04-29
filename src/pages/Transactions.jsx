@@ -27,7 +27,7 @@ export default function Transactions() {
 
   const formatter = useNumberFormatter({
     style: 'currency',
-    currency: profile?.currency === 'FCAF' ? 'XOF' : profile?.currency || 'USD',
+    currency: profile?.currency === 'FCAF' ? 'XAF' : profile?.currency || 'USD',
     currencyDisplay: 'narrowSymbol'
   });
 
@@ -73,21 +73,6 @@ export default function Transactions() {
 
   const netSavings = totalInflow - totalOutflow;
 
-  // Category Breakdown for sidebar
-  const categoryTotals = currentMonthTransactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + parseFloat(t.amount);
-      return acc;
-    }, {});
-
-  const topCategories = Object.entries(categoryTotals)
-    .map(([name, amount]) => ({
-      name,
-      percent: totalOutflow > 0 ? Math.round((amount / totalOutflow) * 100) : 0
-    }))
-    .sort((a, b) => b.percent - a.percent)
-    .slice(0, 3);
 
   // Vault Status (Goal progress)
   const totalTarget = goals.reduce((sum, g) => sum + g.target_amount, 0);
@@ -141,10 +126,6 @@ export default function Transactions() {
             {now.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 transition-all active:scale-95">
-          <Download size={18} />
-          {t('exportPDF')}
-        </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -252,33 +233,6 @@ export default function Transactions() {
               </div>
             </div>
             <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
-          </div>
-
-          {/* Spend Breakdown Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">{t('topCategories')}</h3>
-              <Activity size={18} className="text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div className="space-y-6">
-              {topCategories.map((cat, i) => (
-                <div key={cat.name} className="space-y-2">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-700 dark:text-slate-300">{cat.name}</span>
-                    <span className="text-slate-400">{cat.percent}%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-indigo-600 rounded-full transition-all duration-1000"
-                      style={{ width: `${cat.percent}%`, opacity: 1 - i * 0.25 }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button className="w-full mt-8 py-3 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-colors border border-indigo-100 dark:border-indigo-800 uppercase tracking-widest">
-              {t('viewDetailedAnalytics') || 'View Detailed Analytics'}
-            </button>
           </div>
 
           {/* Vault Status Card */}

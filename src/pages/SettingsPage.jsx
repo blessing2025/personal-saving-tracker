@@ -128,9 +128,9 @@ const SettingsPage = () => {
                   <option value="EUR">EUR (€)</option>
                   <option value="NGN">NGN (₦)</option>
                   <option value="GBP">GBP (£)</option>
-                  <option value="XOF">CFA (XOF)</option>
+                  <option value="XAF">CFA (XAF)</option>
                 </select>
-              </div>
+              </div>²
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">

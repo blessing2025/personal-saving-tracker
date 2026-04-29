@@ -17,7 +17,7 @@ export default function IncomePage() {
 
   const formatter = useNumberFormatter({
     style: 'currency',
-    currency: profile?.currency === 'FCAF' ? 'XOF' : profile?.currency || 'USD',
+    currency: profile?.currency === 'FCAF' ? 'XAF' : profile?.currency || 'USD',
     currencyDisplay: 'symbol'
   });
 
