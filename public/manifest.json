@@ -2,8 +2,8 @@
   "name": "Personal Saving Tracker",
   "short_name": "PST",
   "description": "Premium Financial Management & Secure Ledger",
-  "id": "/?source=pwa",
-  "start_url": "/?source=pwa",
+  "id": "/",
+  "start_url": "/?utm_source=pwa",
   "scope": "/",
   "display": "standalone", 
   "background_color": "#ffffff", 
@@ -19,29 +19,22 @@
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
       "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "https://via.placeholder.com/1280x720.png?text=PST+Dashboard",
+      "src": "https://via.placeholder.com/1280x720.png?text=Desktop+Overview",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Desktop view of the dashboard"
     },
     {
-      "src": "https://via.placeholder.com/720x1280.png?text=PST+Mobile",
+      "src": "https://via.placeholder.com/720x1280.png?text=Mobile+App+View",
       "sizes": "720x1280",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Mobile view of the dashboard"
+      "label": "Mobile Dashboard"
     }
   ]
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v10'; // Updated for offline and installability fixes
+const CACHE_NAME = 'pst-v11'; // Incremented to refresh cache and manifest logic
 
 const ASSETS_TO_PRECACHE = [
   '/',
@@ -48,10 +48,8 @@ self.addEventListener('fetch', (event) => {
   // For navigation requests (e.g., direct URL entry, refresh on a sub-route)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      caches.match('/', { ignoreSearch: true }).then(cachedResponse => {
-        return cachedResponse || fetch(event.request).catch(() => {
-          return caches.match('/', { ignoreSearch: true }); 
-        });
+      fetch(event.request).catch(() => {
+        return caches.match('/', { ignoreSearch: true });
       })
     );
     return;
