@@ -28,8 +28,9 @@ export default function Sidebar({ isOpen, onClose }) {
     { to: '/goals', icon: <Target size={20} />, label: t('goals') },
     { to: '/reports', icon: <BarChart3 size={20} />, label: t('reports') },
     { to: '/voice-notes', icon: <Mic size={20} />, label: t('voiceNotes') },
-    { to: '/settings', icon: <Settings size={20} />, label: t('settings') },
     { to: '/transactions', icon: <History size={20} />, label: t('transactions') },
+    { to: '/settings', icon: <Settings size={20} />, label: t('settings') },
+  
   ];
 
   return (

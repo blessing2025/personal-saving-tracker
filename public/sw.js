@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v25'; // Hide install banner on desktop
+const CACHE_NAME = 'pst-v26'; // Hide install banner on desktop
 
 const ASSETS_TO_PRECACHE = [
   '/',
