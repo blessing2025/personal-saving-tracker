@@ -61,6 +61,7 @@ export default function Reports() {
   const COLORS = ['#10B981', '#6366F1']; // Emerald and Indigo
 
   const handleExport = async () => {
+    const tid = toast.loading(t('loading') || 'Generating PDF...');
     const doc = new jsPDF();
     const pageHeight = doc.internal.pageSize.height;
     const marginTop = 20; // Standard top margin for new pages

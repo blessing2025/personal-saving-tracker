@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v12'; // Incremented to refresh cache and manifest logic
+const CACHE_NAME = 'pst-v13'; // Incremented to refresh cache and manifest logic
 
 const ASSETS_TO_PRECACHE = [
   '/',
@@ -48,8 +48,10 @@ self.addEventListener('fetch', (event) => {
   // For navigation requests (e.g., direct URL entry, refresh on a sub-route)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match('/', { ignoreSearch: true });
+      caches.match('/', { ignoreSearch: true }).then((cachedResponse) => {
+        // Try to get fresh content from network, but return cached shell immediately if network is slow/offline
+        const fetchPromise = fetch(event.request).catch(() => cachedResponse);
+        return cachedResponse || fetchPromise;
       })
     );
     return;

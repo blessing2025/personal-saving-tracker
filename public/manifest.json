@@ -3,7 +3,7 @@
   "short_name": "PST",
   "description": "Premium Financial Management & Secure Ledger",
   "id": "/",
-  "start_url": "/?utm_source=pwa",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone", 
   "background_color": "#ffffff", 
