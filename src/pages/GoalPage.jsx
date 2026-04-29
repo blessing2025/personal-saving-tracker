@@ -175,10 +175,12 @@ export default function GoalPage() {
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2 ml-1">{t('target')}</label>
               <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                  {profile?.currency === 'XAF' ? 'FCFA' : profile?.currency || '$'}
+                </span>
                 <input 
                   {...register('target_amount', { required: true })}
-                  className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl py-4 pl-10 pr-5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body" 
+                  className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl py-4 pl-16 pr-5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body" 
                   placeholder="0.00" 
                   type="number" 
                 />

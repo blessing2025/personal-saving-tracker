@@ -154,10 +154,12 @@ export default function IncomePage() {
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{t('amount')}</label>
                   <div className="relative">
-                    
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                      {profile?.currency === 'XAF' ? 'FCFA' : profile?.currency || '$'}
+                    </span>
                     <input 
                       {...register('amount', { required: true })}
-                      className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl p-4 pl-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body text-lg" 
+                      className="w-full bg-slate-50 dark:bg-slate-700 border-none rounded-xl p-4 pl-16 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none font-body text-lg" 
                       placeholder="0.00" 
                       type="number" 
                       step="0.01" 
