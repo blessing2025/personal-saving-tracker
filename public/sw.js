@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v16'; // Force update for PWA installability fix
+const CACHE_NAME = 'pst-v17'; // Force update for PWA installability fix
 
 const ASSETS_TO_PRECACHE = [
   '/',

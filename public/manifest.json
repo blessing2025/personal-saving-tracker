@@ -3,7 +3,7 @@
   "short_name": "PST",
   "description": "Premium Financial Management & Secure Ledger",
   "id": "/",
-  "start_url": "/?source=pwa",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone", 
   "background_color": "#ffffff", 
@@ -36,14 +36,14 @@
   ],
   "screenshots": [
     {
-      "src": "https://via.placeholder.com/1280x720.png?text=Desktop+Dashboard+Overview",
+      "src": "https://via.placeholder.com/1280x720.png?text=PST+Desktop+Dashboard",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Desktop view of the dashboard"
     },
     {
-      "src": "https://via.placeholder.com/720x1280.png?text=Mobile+Ledger+View",
+      "src": "https://via.placeholder.com/720x1280.png?text=PST+Mobile+Ledger",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow",

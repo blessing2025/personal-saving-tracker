@@ -144,7 +144,11 @@ export default function Reports() {
     };
 
     try {
-      if (barChartRef.current) {
+      // Detect if the app is running in standalone mode (installed PWA)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      // Only include the chart if not in standalone/installed mode
+      if (!isStandalone && barChartRef.current) {
         checkAndAddPage(chartHeight + 20); 
 
         const canvas = await html2canvas(barChartRef.current, html2canvasOptions);
