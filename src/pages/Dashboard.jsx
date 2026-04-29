@@ -3,13 +3,25 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { useTranslation } from '../contexts/TranslationContext';
 import { useAuth } from '../contexts/AuthContext';
-import { TrendingUp, Wallet, Receipt, Plus, Calendar, MoreHorizontal, ShoppingBag, Briefcase } from 'lucide-react';
+import { 
+  TrendingUp, 
+  Wallet, 
+  Receipt, 
+  Plus, 
+  Calendar, 
+  MoreHorizontal, 
+  ShoppingBag, 
+  Briefcase,
+  Download,
+  Sparkles,
+  X
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient'; // Import supabase client
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
-  const { t, profile, formatDate } = useTranslation();
+  const { t, profile, formatDate, deferredPrompt, setDeferredPrompt } = useTranslation();
   const { user } = useAuth();
 
   // Fetch data from Dexie
@@ -140,8 +152,56 @@ const Dashboard = () => {
     if (user?.id) triggerSummaryNotification();
   }, [profile?.monthly_summaries, t, user?.email, user?.id, totalIncome, totalExpense, netWorth, profile?.currency, now]);
 
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+
+    // We've used the prompt, and can't use it again, throw it away
+    setDeferredPrompt(null);
+  };
+
   return (
     <div className="animate-in fade-in duration-500">
+      {/* Custom PWA Install Banner */}
+      {deferredPrompt && (
+        <div className="mb-10 animate-in slide-in-from-top-4 duration-500 md:hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-2xl p-6 text-white shadow-xl shadow-indigo-500/20 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12">
+              <Download size={120} />
+            </div>
+            <div className="flex items-center gap-5 relative z-10">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
+                <Sparkles className="text-white" size={28} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold tracking-tight">Install PST System</h3>
+                <p className="text-indigo-100 text-sm font-medium">Add to your home screen for a premium, app-like experience and offline access.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 w-full md:w-auto relative z-10">
+              <button 
+                onClick={() => setDeferredPrompt(null)}
+                className="p-4 text-white/60 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+              <button 
+                onClick={handleInstallClick}
+                className="flex-1 md:flex-none px-8 py-3 bg-white text-indigo-600 font-bold rounded-full shadow-lg hover:bg-indigo-50 transition-all active:scale-95"
+              >
+                Install Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Section */}
       <header className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div> 

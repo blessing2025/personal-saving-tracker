@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pst-v21'; // Force update for apple-touch-icon fix
+const CACHE_NAME = 'pst-v23'; // Hide install banner on desktop
 
 const ASSETS_TO_PRECACHE = [
   '/',

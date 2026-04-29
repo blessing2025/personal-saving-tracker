@@ -111,6 +111,19 @@ const AppContent = () => {
   useOfflineSync(); // Initialize offline synchronization
   const { user, loading } = useAuth();
   const [isAppReady, setIsAppReady] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
 
   useEffect(() => {
     // Ensure the animated transition plays for at least 2 seconds on first load
@@ -192,7 +205,7 @@ const AppContent = () => {
 
   return (
     <I18nProvider locale={profile?.language || 'en-US'}>
-      <TranslationContext.Provider value={{ t, profile, formatDate }}>
+      <TranslationContext.Provider value={{ t, profile, formatDate, deferredPrompt, setDeferredPrompt }}>
       <ErrorBoundary>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
         <Toaster position="top-right" />
